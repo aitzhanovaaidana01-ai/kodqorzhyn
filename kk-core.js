@@ -15,8 +15,11 @@ window.KK = (function () {
   };
   const TRACK = /^https:\/\/script\.google(usercontent)?\.com\//.test(KK_TRACK_URL);
   const LV = ["Оңай", "Орташа", "Күрделі"], PTS = [10, 20, 30];
+  /* Әр миссияда 5 тапсырма: 1–2 оңай, 3–4 орташа, 5 күрделі */
+  const TLV = [0, 0, 1, 1, 2], TPTS = TLV.map(l => PTS[l]), NT = TLV.length;
   const OLD_PTS = { p1: 10, p2: 10, p3: 10, p4: 10, p5: 20, p6: 20, p7: 20, p8: 20, p9: 30, p10: 30, p11: 30, p12: 30 };
-  const MAX_MS = 34 * 60;
+  const MAX_MS = 34 * TPTS.reduce((a, b) => a + b, 0), TOTAL_T = 34 * NT;
+  const KEY_RE = /^(\d{1,2})\.([0-4])$/;
   let me = LS.get("kk-me", null);
   let page = { section: () => "", onChange: () => { } };
 
@@ -27,10 +30,11 @@ window.KK = (function () {
   function isDark() { const t = root.getAttribute("data-theme"); return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches }
 
   /* ---------- progress ---------- */
-  function ms() { const s = LS.get("kk-ms", {}); s.done = s.done || {}; s.tries = s.tries || {}; return s }
-  function saveMs(s) { LS.set("kk-ms", s) }
+  function ms() { const s = LS.get("kk-ms2", {}); s.done = s.done || {}; s.tries = s.tries || {}; return s }
+  function saveMs(s) { LS.set("kk-ms2", s) }
   function oldDone() { const p = LS.get("kk-practice", { done: {} }); return Object.keys(p.done || {}).filter(k => OLD_PTS[k]) }
-  function msScore() { return Object.keys(ms().done).reduce((a, k) => a + (PTS[+k.split("-")[1]] || 0), 0) }
+  function ptsOf(k) { const m = String(k).match(KEY_RE); return m ? TPTS[+m[2]] : 0 }
+  function msScore() { return Object.keys(ms().done).reduce((a, k) => a + ptsOf(k), 0) }
   function score() { return msScore() + oldDone().reduce((a, k) => a + OLD_PTS[k], 0) }
   function progKeys() { return Object.keys(ms().done).concat(oldDone()) }
   function mergeProg(keys) {
@@ -38,7 +42,7 @@ window.KK = (function () {
     const s = ms(); let ch = false;
     const pr = LS.get("kk-practice", { done: {}, tries: {}, name: "", cls: "" }); pr.done = pr.done || {};
     keys.forEach(k => {
-      if (/^\d{1,2}-[0-2]$/.test(k)) { if (!s.done[k]) { s.done[k] = { date: "", tries: 0, sync: 1 }; ch = true } }
+      if (KEY_RE.test(k)) { if (!s.done[k]) { s.done[k] = { date: "", tries: 0, sync: 1 }; ch = true } }
       else if (OLD_PTS[k] && !pr.done[k]) { pr.done[k] = { date: "", tries: 0 }; ch = true }
     });
     if (ch) { saveMs(s); LS.set("kk-practice", pr) }
@@ -52,7 +56,7 @@ window.KK = (function () {
     const b = {
       name: me.name, cls: me.cls, device: me.id, minutes: Math.round(activeSec / 60),
       section: page.section(), mission: LS.get("kk-mission", 1) + "-миссия",
-      practice: "миссия " + done + "/102 · практика " + oldDone().length + "/12",
+      practice: "миссия " + done + "/" + TOTAL_T + " · практика " + oldDone().length + "/12",
       score: score(), prog: progKeys(), want: "top"
     };
     if (event) b.event = event;
@@ -223,8 +227,64 @@ window.KK = (function () {
     const ln = (m.match(/line (\d+)/) || [])[1];
     return { name: k || n || "Қате", m, line: ln ? +ln : 0, h: k ? HINT[k] : "Қате хабарламасын оқы: онда қатенің түрі мен жол нөмірі жазылған." };
   }
-  async function exec(code, inputs) {
+  /* Браузердегі Python файлға жаза алмайды, сондықтан open() жадтағы «виртуал файлдармен» жұмыс істейді. */
+  const FS_PRE = [
+    "class _KKFile:",
+    "    def __init__(self, name, mode):",
+    "        self.name = name",
+    "        self.pos = 0",
+    "        if 'r' in mode:",
+    "            if name not in _FS:",
+    "                raise IOError('Файл табылмады: ' + name)",
+    "        elif 'a' in mode:",
+    "            if name not in _FS:",
+    "                _FS[name] = ''",
+    "        else:",
+    "            _FS[name] = ''",
+    "    def write(self, s):",
+    "        _FS[self.name] = _FS[self.name] + s",
+    "        return len(s)",
+    "    def read(self):",
+    "        d = _FS[self.name][self.pos:]",
+    "        self.pos = len(_FS[self.name])",
+    "        return d",
+    "    def readline(self):",
+    "        d = _FS[self.name]",
+    "        if self.pos >= len(d):",
+    "            return ''",
+    "        i = d.find('\\n', self.pos)",
+    "        if i < 0:",
+    "            i = len(d) - 1",
+    "        r = d[self.pos:i + 1]",
+    "        self.pos = i + 1",
+    "        return r",
+    "    def readlines(self):",
+    "        res = []",
+    "        while True:",
+    "            l = self.readline()",
+    "            if l == '':",
+    "                break",
+    "            res.append(l)",
+    "        return res",
+    "    def __iter__(self):",
+    "        return iter(self.readlines())",
+    "    def close(self):",
+    "        pass",
+    "    def __enter__(self):",
+    "        return self",
+    "    def __exit__(self, a, b, c):",
+    "        return False",
+    "def open(name, mode='r', encoding=None):",
+    "    return _KKFile(name, mode)"
+  ];
+  async function exec(code, inputs, files) {
     await loadSk();
+    let pre = 0;
+    if (files || /\bopen\s*\(/.test(code)) {
+      const lines = ["_FS = " + JSON.stringify(files || {})].concat(FS_PRE);
+      pre = lines.length; code = lines.join("\n") + "\n" + code;
+    }
+    const fix = r => { if (r.err && pre) { r.err.m = r.err.m.replace(/line (\d+)/g, (_, n) => "line " + Math.max(1, n - pre)); if (r.err.line) r.err.line = Math.max(1, r.err.line - pre) } return r };
     let shown = "", pure = ""; const q = inputs.slice();
     Sk.configure({
       output: t => { shown += t; pure += t },
@@ -234,7 +294,7 @@ window.KK = (function () {
       execLimit: 5000
     });
     try { await Sk.misceval.asyncToPromise(() => Sk.importMainWithBody("<stdin>", false, code, true)); return { ok: true, shown, pure } }
-    catch (e) { return { ok: false, shown, pure, err: errInfo(e) } }
+    catch (e) { return fix({ ok: false, shown, pure, err: errInfo(e) }) }
   }
   /* textarea + жол нөмірлері + Tab/Enter шегінісі */
   function editor(ta, gut, onInput) {
@@ -265,7 +325,7 @@ window.KK = (function () {
   }
 
   return {
-    $, $$, esc, LS, LV, PTS, MAX_MS, TRACK,
+    $, $$, esc, LS, LV, PTS, TLV, TPTS, NT, MAX_MS, TOTAL_T, TRACK, ptsOf,
     get me() { return me }, get board() { return board },
     ms, saveMs, score, msScore, oldDone, header, start, openLogin, sync, exec, editor, copy
   };

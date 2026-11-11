@@ -171,7 +171,7 @@ code{font-size:.92em;background:var(--surface-2);padding:1px 6px;border-radius:6
 .theory .rule{margin-top:10px;padding:10px 14px;border-radius:10px;background:var(--surface-2);font-family:var(--f-mono);font-size:14px;overflow-x:auto;white-space:pre-wrap}
 
 /* level tabs */
-.lv-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.lv-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px;margin-bottom:14px}
 .lv-tab{all:unset;box-sizing:border-box;cursor:pointer;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface);display:flex;flex-direction:column;gap:2px;transition:border-color .2s,background .2s;min-width:0}
 .lv-tab b{font-family:var(--f-display);font-size:14px}
 .lv-tab span{font-size:12.5px;color:var(--muted);font-weight:600}

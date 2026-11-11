@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap">
-<link rel="stylesheet" href="kk.css">
+<link rel="stylesheet" href="kk.css?v=3">
 </head>
 <body>
 <header class="top" id="top"></header>
@@ -17,7 +17,7 @@
     <div id="headText">
       <span class="kicker">34 БАСПАЛДАҚ</span>
       <h1><em>34 миссия</em> — әрқайсысы бір сабақ</h1>
-      <p>Миссияны таңда. Ішінде қысқа түсіндірме видео, мысал код және үш деңгейлі практикалық тапсырма бар: оңайдан баста, орташаға өт, күрделіні бағындыр. Әр тапсырмаңа бірден кері байланыс аласың, ал ұпайың «Үздік 5» кестесіне түседі.</p>
+      <p>Миссияны таңда. Ішінде қысқа түсіндірме видео, түсіндірме сабақ, мысал код және 5 практикалық тапсырма бар: екі оңай, екі орташа және бір күрделі. Әр тапсырмаңа бірден кері байланыс аласың, ал ұпайың «Үздік 5» кестесіне түседі.</p>
     </div>
     <div class="status" id="status" aria-live="polite"></div>
   </div>
@@ -35,29 +35,31 @@
   </div>
 </footer>
 
-<script src="kk-core.js"></script>
-<script src="missions-data.js"></script>
+<script src="kk-core.js?v=3"></script>
+<script src="missions-data.js?v=3"></script>
 <script>
 (function () {
 "use strict";
-const { $, $$, esc, LS, LV, PTS } = KK;
+const { $, $$, esc, LS, LV, TLV, TPTS, NT } = KK;
 const M = KK_MISSIONS, ST = KK_STAGES;
 const pad = n => String(n).padStart(2, "0");
 const stageOf = n => ST.findIndex(s => n >= s.from && n <= s.to);
-const key = (m, l) => m + "-" + l;
-let cur = { m: 0, l: 0 }, lbMode = "all";
+const key = (m, t) => m + "." + t;
+const MPTS = TPTS.reduce((a, b) => a + b, 0);
+const tName = t => (t + 1) + "-тапсырма · " + LV[TLV[t]];
+let cur = { m: 0, t: 0 }, lbMode = "all";
 
-/* ---------- маршрут: #m5 немесе #m5-1 ---------- */
+/* ---------- маршрут: #m5 немесе #m5-3 ---------- */
 function parseHash() {
-  const h = location.hash.match(/^#m(\d{1,2})(?:-([0-2]))?$/);
-  if (h && +h[1] >= 1 && +h[1] <= 34) return { m: +h[1], l: h[2] === undefined ? null : +h[2] };
-  return { m: 0, l: 0 };
+  const h = location.hash.match(/^#m(\d{1,2})(?:-([0-4]))?$/);
+  if (h && +h[1] >= 1 && +h[1] <= 34) return { m: +h[1], t: h[2] === undefined ? null : +h[2] };
+  return { m: 0, t: 0 };
 }
-function firstOpen(m) { const d = KK.ms().done; for (let l = 0; l < 3; l++) if (!d[key(m, l)]) return l; return 0 }
-function nextTask() { const d = KK.ms().done; for (let m = 1; m <= 34; m++) for (let l = 0; l < 3; l++) if (!d[key(m, l)]) return { m, l }; return null }
+function firstOpen(m) { const d = KK.ms().done; for (let t = 0; t < NT; t++) if (!d[key(m, t)]) return t; return 0 }
+function nextTask() { const d = KK.ms().done; for (let m = 1; m <= 34; m++) for (let t = 0; t < NT; t++) if (!d[key(m, t)]) return { m, t }; return null }
 function route() {
   const p = parseHash();
-  cur = { m: p.m, l: p.m ? (p.l === null ? firstOpen(p.m) : p.l) : 0 };
+  cur = { m: p.m, t: p.m ? (p.t === null ? firstOpen(p.m) : p.t) : 0 };
   if (cur.m) LS.set("kk-mission", cur.m);
   render(); window.scrollTo(0, 0);
   KK.sync().then(j => { if (j) refresh() });
@@ -66,23 +68,27 @@ addEventListener("hashchange", route);
 
 /* ---------- статус жолағы: «сен қазір осы бөлімдесің, ұпайың осындай» ---------- */
 function drawStatus() {
-  const me = KK.me, sc = KK.score(), max = KK.MAX_MS, b = KK.board;
+  const me = KK.me, sc = KK.score(), max = KK.MAX_MS + 240, b = KK.board;
   const done = Object.keys(KK.ms().done).length;
-  const where = cur.m ? `${pad(cur.m)}-миссия · ${LV[cur.l]}` : "Миссиялар тізімі";
+  const where = cur.m ? `${pad(cur.m)}-миссия · ${cur.t + 1}-тапсырма` : "Миссиялар тізімі";
   const rank = b && b.rank ? `${b.rank}-орын <span class="muted" style="font:600 13px var(--f-body)">/ ${b.total}</span>` : "—";
   $("#status").innerHTML = `
     <div class="st-box"><small>Оқушы</small><b>${me ? esc(me.name) : "Қонақ"}</b><div class="muted" style="font-size:13px">${me ? esc(me.cls) + " сынып" : '<a href="#" id="stLogin">Сайтқа кіру</a>'}</div></div>
     <div class="st-box hl"><small>📍 Сен қазір мына бөлімдесің</small><b>${where}</b><div class="muted" style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cur.m ? "«" + esc(M[cur.m - 1].t) + "»" : "Миссияны таңда"}</div></div>
-    <div class="st-box"><small>⭐ Ұпайың</small><b>${sc} <span class="muted" style="font:600 13px var(--f-body)">/ ${max + 240}</span></b><div class="bar"><i style="width:${Math.min(100, sc / (max + 240) * 100)}%"></i></div></div>
-    <div class="st-box"><small>🏅 Орның</small><b>${rank}</b><div class="muted" style="font-size:13px">Тапсырма: ${done} / 102</div></div>`;
+    <div class="st-box"><small>⭐ Ұпайың</small><b>${sc} <span class="muted" style="font:600 13px var(--f-body)">/ ${max}</span></b><div class="bar"><i style="width:${Math.min(100, sc / max * 100)}%"></i></div></div>
+    <div class="st-box"><small>🏅 Орның</small><b>${rank}</b><div class="muted" style="font-size:13px">Тапсырма: ${done} / ${KK.TOTAL_T}</div></div>`;
   const sl = $("#stLogin"); if (sl) sl.onclick = e => { e.preventDefault(); KK.openLogin() };
 }
 
 /* ---------- бүйір панель ---------- */
 function drawAside() {
   const d = KK.ms().done, n = Object.keys(d).length, nt = nextTask(), b = KK.board, me = KK.me;
-  const bars = LV.map((l, i) => { const c = M.filter((_, k) => d[key(k + 1, i)]).length; return `<div class="lv-bar"><span>${l}</span><span class="tr"><i style="width:${c / 34 * 100}%"></i></span><span>${c}/34</span></div>` }).join("");
-  const msg = n === 0 ? "Алғашқы тапсырмаңды орында!" : n < 20 ? "Жақсы бастама! Жалғастыр." : n < 60 ? "Сен алға жылжып келесің!" : n < 102 ? "Шебер кодер болуға аз қалды!" : "Барлық миссия бағындырылды! 🏆";
+  const bars = LV.map((l, lv) => {
+    const idx = TLV.map((x, t) => x === lv ? t : -1).filter(t => t >= 0), tot = idx.length * 34;
+    let c = 0; for (let m = 1; m <= 34; m++) idx.forEach(t => { if (d[key(m, t)]) c++ });
+    return `<div class="lv-bar"><span>${l}</span><span class="tr"><i style="width:${c / tot * 100}%"></i></span><span>${c}/${tot}</span></div>`;
+  }).join("");
+  const msg = n === 0 ? "Алғашқы тапсырмаңды орында!" : n < 30 ? "Жақсы бастама! Жалғастыр." : n < 100 ? "Сен алға жылжып келесің!" : n < KK.TOTAL_T ? "Шебер кодер болуға аз қалды!" : "Барлық миссия бағындырылды! 🏆";
   let list = "";
   if (b) {
     const rows = lbMode === "cls" ? b.topCls : b.top;
@@ -95,9 +101,9 @@ function drawAside() {
   $("#aside").innerHTML = `
     <div class="card">
       <span class="tag red">Менің көрсеткішім</span>
-      <div class="me-top" style="margin-top:12px"><div class="ring" style="--v:${Math.round(n / 102 * 100)}"><span>${n}/102</span></div><div><h3>${KK.score()} ұпай</h3><p class="muted" style="font-size:14px">${msg}</p></div></div>
+      <div class="me-top" style="margin-top:12px"><div class="ring" style="--v:${Math.round(n / KK.TOTAL_T * 100)}"><span>${n}/${KK.TOTAL_T}</span></div><div><h3>${KK.score()} ұпай</h3><p class="muted" style="font-size:14px">${msg}</p></div></div>
       <div class="lv-bars">${bars}</div>
-      ${nt ? `<a class="btn blue sm" style="margin-top:14px;width:100%" href="#m${nt.m}-${nt.l}">▶ Жалғастыру: ${pad(nt.m)}-миссия · ${LV[nt.l]}</a>` : ""}
+      ${nt ? `<a class="btn blue sm" style="margin-top:14px;width:100%" href="#m${nt.m}-${nt.t}">▶ Жалғастыру: ${pad(nt.m)}-миссия · ${nt.t + 1}-тапсырма</a>` : ""}
     </div>
     <div class="card lb">
       <h3><span class="emo">🏆</span> Үздік 5</h3>
@@ -112,21 +118,24 @@ function drawAside() {
 function drawList() {
   $("#headText").hidden = false;
   const d = KK.ms().done, last = LS.get("kk-mission", 0);
+  const ds = n => TLV.map((_, t) => !!d[key(n, t)]);
+  const ptsOf = n => ds(n).reduce((a, x, t) => a + (x ? TPTS[t] : 0), 0);
   const stages = ST.map(s => {
     let cards = "";
     for (let n = s.from; n <= s.to; n++) {
-      const m = M[n - 1], ds = [0, 1, 2].map(l => !!d[key(n, l)]), pts = ds.reduce((a, x, l) => a + (x ? PTS[l] : 0), 0);
-      cards += `<a class="m-card ${ds.every(Boolean) ? "full" : ""} ${n === last ? "cur" : ""}" href="#m${n}" aria-label="${n}-миссия: ${esc(m.t)}. ${pts} / 60 ұпай">
+      const m = M[n - 1], dn = ds(n), pts = ptsOf(n);
+      cards += `<a class="m-card ${dn.every(Boolean) ? "full" : ""} ${n === last ? "cur" : ""}" href="#m${n}" aria-label="${n}-миссия: ${esc(m.t)}. ${pts} / ${MPTS} ұпай">
         <span class="row"><span class="no">${pad(n)}<small>МИССИЯ</small></span><span class="emo">${m.e}</span></span>
         <h3>${esc(m.t)}</h3>
-        <span class="foot"><span class="dots3">${ds.map(x => `<i class="${x ? "on" : ""}"></i>`).join("")}</span><span>${pts}/60</span></span></a>`;
+        <span class="foot"><span class="dots3">${dn.map(x => `<i class="${x ? "on" : ""}"></i>`).join("")}</span><span>${pts}/${MPTS}</span></span></a>`;
     }
     return `<section class="stage"><div class="stage-h"><span class="rn">${s.r}</span><h2>${s.n}</h2><span>${s.from}–${s.to}-миссия</span></div><div class="m-grid">${cards}</div></section>`;
   }).join("");
-  const rows = M.map((m, i) => { const ds = [0, 1, 2].map(l => d[key(i + 1, l)]); const pts = ds.reduce((a, x, l) => a + (x ? PTS[l] : 0), 0); return `<tr><td>${pad(i + 1)}</td><td><a href="#m${i + 1}">${esc(m.t)}</a></td>${ds.map(x => `<td class="c ${x ? "y" : "n"}">${x ? "✓" : "—"}</td>`).join("")}<td class="c"><b>${pts}</b>/60</td></tr>` }).join("");
+  const rows = M.map((m, i) => { const dn = ds(i + 1); return `<tr><td>${pad(i + 1)}</td><td><a href="#m${i + 1}">${esc(m.t)}</a></td>${dn.map(x => `<td class="c ${x ? "y" : "n"}">${x ? "✓" : "—"}</td>`).join("")}<td class="c"><b>${ptsOf(i + 1)}</b>/${MPTS}</td></tr>` }).join("");
   $("#main").innerHTML = stages + `
     <details class="card" id="resBox"><summary style="cursor:pointer;font-weight:700">📋 Менің нәтижелерім: барлық миссия бойынша кесте</summary>
-      <div style="overflow-x:auto;margin-top:12px"><table class="res-table"><thead><tr><th>№</th><th>Миссия</th><th class="c">Оңай</th><th class="c">Орташа</th><th class="c">Күрделі</th><th class="c">Ұпай</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div style="overflow-x:auto;margin-top:12px"><table class="res-table"><thead><tr><th>№</th><th>Миссия</th>${TLV.map((l, t) => `<th class="c" title="${LV[l]}">${t + 1}</th>`).join("")}<th class="c">Ұпай</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <p class="muted" style="font-size:13px;margin-top:8px">1–2 — оңай, 3–4 — орташа, 5 — күрделі тапсырма.</p>
     </details>`;
 }
 
@@ -134,7 +143,7 @@ function drawList() {
 function ytId(u) { const m = String(u).match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/); return m ? m[1] : null }
 function drawVideo(n) {
   const box = $("#vslot"), src = (window.KK_VIDEOS || {})[n];
-  const ph = () => { box.innerHTML = `<div class="ph"><span class="emo">🎬</span><b>${pad(n)}-миссияның видеосы жақында қосылады</b><span>Әзірге төмендегі қысқаша түсіндірмені оқып, мысал кодты іске қосып көр.</span></div>` };
+  const ph = () => { box.innerHTML = `<div class="ph"><span class="emo">🎬</span><b>${pad(n)}-миссияның видеосы жақында қосылады</b><span>Әзірге төмендегі түсіндірме сабақты оқып, мысал кодты іске қосып көр.</span></div>` };
   const vid = s => { box.innerHTML = `<video controls playsinline preload="metadata" src="${esc(s)}#t=0.5"></video>`; box.firstChild.addEventListener("error", ph) };
   if (src && ytId(src)) { box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${ytId(src)}" title="${pad(n)}-миссияның түсіндірме видеосы" allow="accelerometer; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe>`; return }
   if (src) { vid(src); return }
@@ -151,12 +160,12 @@ function ideHTML(id, o) {
     <div class="ide-in" id="${id}-inrow" ${o.inputs ? "" : "hidden"}><label for="${id}-in">input() мәндері (үтір арқылы):</label><input id="${id}-in" autocomplete="off" placeholder="мысалы: Айбар, 14"></div>
     <div class="ide-out" id="${id}-out" aria-live="polite"><span class="note">«▶ Іске қос» батырмасын бас</span></div></div>`;
 }
-async function runInto(id) {
+async function runInto(id, files) {
   const out = $("#" + id + "-out"), ta = $("#" + id + "-code"), inp = $("#" + id + "-in");
   out.innerHTML = '<span class="note">Python іске қосылуда…</span>';
   const vals = inp.value.trim() === "" ? [] : inp.value.split(",").map(s => s.trim());
   try {
-    const r = await KK.exec(ta.value, vals);
+    const r = await KK.exec(ta.value, vals, files);
     out.innerHTML = (r.shown ? esc(r.shown.replace(/\n$/, "")) : (r.ok ? '<span class="note">(экранға ештеңе шықпады — print() қолдандың ба?)</span>' : "")) + (r.ok ? "" : `${r.shown ? "\n" : ""}<span class="err">${esc(r.err.m)}</span><span class="hint">💡 ${esc(r.err.h)}</span>`);
     return r;
   } catch (e) { out.innerHTML = '<span class="err">Python ортасы жүктелмеді. Интернетке қосылғаныңды тексер.</span>'; return null }
@@ -178,12 +187,12 @@ function drawMission() {
     <section class="block" aria-labelledby="b1"><div class="block-h"><span class="n">1</span><h2 id="b1">Түсіндірме видео</h2><span class="sub">қысқаша, 1–3 минут</span></div>
       <div class="vslot" id="vslot"></div></section>
 
-    <section class="block" aria-labelledby="b2"><div class="block-h"><span class="n">2</span><h2 id="b2">Қысқаша түсіндірме</h2><span class="sub">оқы да, мысалды іске қос</span></div>
+    <section class="block" aria-labelledby="b2"><div class="block-h"><span class="n">2</span><h2 id="b2">Түсіндірме сабақ</h2><span class="sub">оқы да, мысалды іске қос</span></div>
       <div class="card theory"><p>${esc(m.th)}</p><div class="rule">${esc(m.rule)}</div>
       ${ideHTML("demo", { file: "mysal_" + pad(n) + ".py", cls: "runner", inputs: !!m.demoIn, btns: '<button class="btn ghost sm" type="button" id="demoReset">↺ Бастапқы</button><button class="btn blue sm" type="button" id="demoRun">▶ Іске қос</button>' })}</div></section>
 
-    <section class="block" aria-labelledby="b3"><div class="block-h"><span class="n">3</span><h2 id="b3">Практикалық тапсырма</h2><span class="sub">оңайдан күрделіге</span></div>
-      <div class="lv-tabs" id="lvTabs" role="tablist" aria-label="Тапсырма деңгейі"></div>
+    <section class="block" aria-labelledby="b3"><div class="block-h"><span class="n">3</span><h2 id="b3">Практикалық тапсырмалар</h2><span class="sub">5 тапсырма: оңайдан күрделіге</span></div>
+      <div class="lv-tabs" id="lvTabs" role="tablist" aria-label="Тапсырмалар"></div>
       <div class="card" id="taskBox"></div></section>
 
     <div class="m-nav">${n > 1 ? `<a class="btn ghost" href="#m${n - 1}">← ${pad(n - 1)}-миссия</a>` : "<span></span>"}${n < 34 ? `<a class="btn blue" href="#m${n + 1}">${pad(n + 1)}-миссия →</a>` : `<a class="btn blue" href="#">🏁 Барлық миссия</a>`}</div>`;
@@ -196,25 +205,27 @@ function drawMission() {
 }
 function drawTabs() {
   const d = KK.ms().done;
-  $("#lvTabs").innerHTML = LV.map((l, i) => `<button class="lv-tab ${d[key(cur.m, i)] ? "done" : ""}" type="button" role="tab" aria-selected="${i === cur.l}" data-l="${i}"><b>${l}</b><span>${d[key(cur.m, i)] ? "орындалды" : "+" + PTS[i] + " ұпай"}</span></button>`).join("");
-  $$("#lvTabs [data-l]").forEach(b => b.onclick = () => { cur.l = +b.dataset.l; history.replaceState(null, "", "#m" + cur.m + "-" + cur.l); drawTask(); drawStatus(); KK.sync() });
+  $("#lvTabs").innerHTML = TLV.map((l, t) => `<button class="lv-tab ${d[key(cur.m, t)] ? "done" : ""}" type="button" role="tab" aria-selected="${t === cur.t}" data-t="${t}"><b>${t + 1} · ${LV[l]}</b><span>${d[key(cur.m, t)] ? "орындалды" : "+" + TPTS[t] + " ұпай"}</span></button>`).join("");
+  $$("#lvTabs [data-t]").forEach(b => b.onclick = () => { cur.t = +b.dataset.t; history.replaceState(null, "", "#m" + cur.m + "-" + cur.t); drawTask(); drawStatus(); KK.sync() });
 }
-const draftKey = () => "kk-ms-code-" + key(cur.m, cur.l);
+const draftKey = () => "kk-ms2-code-" + key(cur.m, cur.t);
 function drawTask() {
   drawTabs();
-  const t = M[cur.m - 1].tasks[cur.l], k = key(cur.m, cur.l), st = KK.ms(), done = st.done[k];
+  const t = M[cur.m - 1].tasks[cur.t], k = key(cur.m, cur.t), done = KK.ms().done[k], lv = TLV[cur.t];
   const hasIn = !!(t.tests && t.tests.some(x => x.i.length));
+  const files = t.tests && t.tests[0].f;
   $("#taskBox").innerHTML = `<div class="task">
-      <span class="tag ${cur.l === 0 ? "" : "red"}">${LV[cur.l]} деңгей · ${PTS[cur.l]} ұпай</span>${done ? ' <span class="tag ok" id="doneTag">✓ Орындалды</span>' : ""}
-      <h3>${esc(t.t)}</h3><p>${esc(t.d)}</p>${t.ex ? `<div class="ex">${t.ex.map(e => `<code>${esc(e)}</code>`).join("")}</div>` : ""}</div>
-    ${ideHTML("ide", { file: "m" + pad(cur.m) + "_" + (cur.l + 1) + ".py", inputs: hasIn, btns: '<button class="btn ghost sm" type="button" id="tReset">↺ Бастапқы код</button><button class="btn ghost sm" type="button" id="tHint">💡 Кеңес</button><button class="btn blue sm" type="button" id="tRun">▶ Іске қос</button><button class="btn primary sm" type="button" id="tCheck">✓ Тексеру</button>' })}
+      <span class="tag ${lv === 0 ? "" : "red"}">${cur.t + 1}-тапсырма · ${LV[lv]} · ${TPTS[cur.t]} ұпай</span>${done ? ' <span class="tag ok" id="doneTag">✓ Орындалды</span>' : ""}
+      <h3>${esc(t.t)}</h3><p>${esc(t.d)}</p>${t.ex ? `<div class="ex">${t.ex.map(e => `<code>${esc(e)}</code>`).join("")}</div>` : ""}
+      ${files ? `<div class="ex">${Object.keys(files).map(f => `<code>📄 ${esc(f)}\n${esc(files[f])}</code>`).join("")}</div>` : ""}</div>
+    ${ideHTML("ide", { file: "m" + pad(cur.m) + "_" + (cur.t + 1) + ".py", inputs: hasIn, btns: '<button class="btn ghost sm" type="button" id="tReset">↺ Бастапқы код</button><button class="btn ghost sm" type="button" id="tHint">💡 Кеңес</button><button class="btn blue sm" type="button" id="tRun">▶ Іске қос</button><button class="btn primary sm" type="button" id="tCheck">✓ Тексеру</button>' })}
     <div class="fb" id="fb" aria-live="polite"><div class="fb-empty">💬 <b>Кері байланыс</b> осы жерде шығады. Кодыңды жазып, алдымен «▶ Іске қос», сосын «✓ Тексеру» батырмасын бас.</div></div>`;
   const ta = $("#ide-code"); let saved = null; try { saved = localStorage.getItem(draftKey()) } catch (e) { }
   ta.value = saved ?? t.code; if (hasIn) $("#ide-in").value = t.tests[0].i.join(", ");
   KK.editor(ta, $("#ide-gut"), () => { try { localStorage.setItem(draftKey(), ta.value) } catch (e) { } });
   $("#tReset").onclick = () => { ta.value = t.code; ta.dispatchEvent(new Event("input")) };
   $("#tHint").onclick = () => { $("#ide-out").innerHTML = `<span class="hint">💡 ${esc(t.hint)}</span>` };
-  $("#tRun").onclick = async () => { busy(true); await runInto("ide"); busy(false) };
+  $("#tRun").onclick = async () => { busy(true); await runInto("ide", files); busy(false) };
   $("#tCheck").onclick = check;
 }
 function busy(on) { ["#tRun", "#tCheck"].forEach(s => { const b = $(s); if (b) b.disabled = on }) }
@@ -228,6 +239,7 @@ const NEED = {
   "+": [/[+*\/-]/, "Жауапты қолмен жазба: амал таңбасын қолданып, Python-ға есептет."],
   len: [/\b(len|sum|max|min)\s*\(/, "Дайын функцияны қолдан: len(), sum(), max() немесе min()."],
   and: [/\band\b/, "Шарттарды and сөзімен біріктір."],
+  or: [/\bor\b/, "Шарттарды or сөзімен біріктір."],
   if: [/\bif\b/, "Бұл тапсырмада if шарты керек."],
   for: [/\bfor\b/, "Бұл тапсырмада for циклі керек."],
   loop: [/\b(for|while)\b/, "Бұл тапсырмада цикл (for немесе while) керек."],
@@ -239,10 +251,10 @@ const NEED = {
 function staticRules(t, code) {
   const c = strip(code), out = [];
   (t.need || []).forEach(k => { if (!NEED[k][0].test(c)) out.push(NEED[k][1]) });
-  (t.inCode || []).forEach(w => { if (!new RegExp("\\b" + w + "\\b").test(c)) out.push(`Кодта «${w}» атауы болуы керек.`) });
+  (t.inCode || []).forEach(w => { const re = /^\w+$/.test(w) ? new RegExp("\\b" + w + "\\b") : null; if (re ? !re.test(c) : !code.includes(w)) out.push(`Кодта «${w}» болуы керек.`) });
+  (t.ban || []).forEach(w => { if (new RegExp("\\b" + w + "\\s*\\(").test(c)) out.push(`Бұл тапсырмада ${w}() қолдануға болмайды: алгоритмді өзің жаз.`) });
   if (t.cm) { const n = (code.replace(/("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')/g, '""').match(/#\s*\S{2,}/g) || []).length; if (n < t.cm) out.push(`Кемінде ${t.cm} түсіндірме (# белгісімен) жаз. Қазір: ${n}.`) }
   if (t.maxPrint) { const n = (c.match(/\bprint\s*\(/g) || []).length; if (n > t.maxPrint) out.push(`Кодта print() ең көбі ${t.maxPrint} рет жазылуы керек (қазір ${n}). Қайталауды циклге тапсыр.`) }
-  if (t.free && t.free.vars) { const names = new Set((c.match(/^[ \t]*([A-Za-z_]\w*)\s*=[^=]/gm) || []).map(x => x.trim().split(/\s|=/)[0])); if (names.size < t.free.vars) out.push(`Кемінде ${t.free.vars} түрлі айнымалы құр. Қазір: ${names.size}.`) }
   return out;
 }
 function diagnose(got, exp, r) {
@@ -261,51 +273,39 @@ function diagnose(got, exp, r) {
   return `${i + 1}-жолда айырмашылық бар. Күтілгені: «${el[i]}», сенде: «${gl[i]}».`;
 }
 async function check() {
-  const m = cur.m, l = cur.l, t = M[m - 1].tasks[l], k = key(m, l), code = $("#ide-code").value, fb = $("#fb");
+  const m = cur.m, ti = cur.t, t = M[m - 1].tasks[ti], k = key(m, ti), code = $("#ide-code").value, fb = $("#fb");
   busy(true); fb.className = "fb"; fb.innerHTML = '<div class="fb-empty">⏳ Тексерілуде…</div>';
   const st = KK.ms(); st.tries[k] = (st.tries[k] || 0) + 1; const tries = st.tries[k]; KK.saveMs(st);
-  const issues = staticRules(t, code); let rows = "", pass = 0, total = 0;
+  const issues = staticRules(t, code); let rows = "", pass = 0;
+  const total = t.tests.length;
   try {
-    if (t.tests) {
-      total = t.tests.length;
-      for (let i = 0; i < t.tests.length; i++) {
-        const c = t.tests[i], r = await KK.exec(code, c.i), got = norm(r.pure), exp = norm(c.o), ok = r.ok && got === exp;
-        if (ok) pass++; else { const dg = diagnose(got, exp, r); if (!issues.includes(dg)) issues.push(dg) }
-        rows += `<div class="fb-test"><span>${ok ? "✅" : "❌"}</span><span><b>${i + 1}-сынақ.</b> <span class="l">Енгізу:</span> <code>${c.i.length ? esc(c.i.join(", ")) : "жоқ"}</code><br><span class="l">Күтілген:</span> <code>${esc(exp)}</code><br><span class="l">${r.ok ? "Сенің нәтижең:" : "Қате:"}</span> <code>${r.ok ? (esc(got) || "(бос)") : esc(r.err.m)}</code></span></div>`;
-      }
-    } else {
-      total = 1; const r = await KK.exec(code, []), got = norm(r.pure), f = t.free || {};
-      const lines = got ? got.split("\n").filter(x => x.trim()).length : 0; let ok = r.ok;
-      if (!r.ok) issues.push(diagnose(got, "", r));
-      else {
-        if (f.lines && lines < f.lines) { ok = false; issues.push(`Кемінде ${f.lines} жол шығуы керек. Қазір: ${lines}.`) }
-        (f.has || []).forEach(w => { if (!got.toLocaleLowerCase("kk").includes(w.toLocaleLowerCase("kk"))) { ok = false; issues.push(`Нәтижеде «${w}» деген мәтін болуы керек.`) } });
-      }
-      if (ok) pass = 1;
-      rows = `<div class="fb-test"><span>${ok ? "✅" : "❌"}</span><span><b>Еркін жауап.</b> <span class="l">Сенің нәтижең:</span><br><code>${r.ok ? (esc(got) || "(бос)") : esc(r.err.m)}</code></span></div>`;
+    for (let i = 0; i < total; i++) {
+      const c = t.tests[i], r = await KK.exec(code, c.i, c.f), got = norm(r.pure), exp = norm(c.o), ok = r.ok && got === exp;
+      if (ok) pass++; else { const dg = diagnose(got, exp, r); if (!issues.includes(dg)) issues.push(dg) }
+      rows += `<div class="fb-test"><span>${ok ? "✅" : "❌"}</span><span><b>${i + 1}-сынақ.</b> <span class="l">Енгізу:</span> <code>${c.i.length ? esc(c.i.join(", ")) : "жоқ"}</code>${c.f ? ` <span class="l">Файл:</span> <code>${esc(Object.keys(c.f).join(", "))}</code>` : ""}<br><span class="l">Күтілген:</span> <code>${esc(exp)}</code><br><span class="l">${r.ok ? "Сенің нәтижең:" : "Қате:"}</span> <code>${r.ok ? (esc(got) || "(бос)") : esc(r.err.m)}</code></span></div>`;
     }
   } catch (e) { fb.className = "fb no"; fb.innerHTML = '<div class="fb-h"><span class="emo">⚠️</span>Python ортасы жүктелмеді</div><div class="fb-b">Интернетке қосылғаныңды тексеріп, қайта бас.</div>'; busy(false); return }
   const all = pass === total && issues.length === 0;
-  if (cur.m !== m || cur.l !== l) { busy(false); return }
+  if (cur.m !== m || cur.t !== ti) { busy(false); return }
   if (all) {
     const s2 = KK.ms(), first = !s2.done[k] || s2.done[k].sync;
-    if (!s2.done[k] || s2.done[k].sync) { s2.done[k] = { date: new Date().toLocaleDateString("kk-KZ"), tries }; KK.saveMs(s2) }
+    if (first) { s2.done[k] = { date: new Date().toLocaleDateString("kk-KZ"), tries }; KK.saveMs(s2) }
     const praise = tries === 1 ? "Бірінші әрекеттен орындадың — нағыз шебер!" : tries <= 3 ? "Қатеңді өзің тауып түзеттің. Бұл — бағдарламашының ең маңызды дағдысы." : "Табандылық танытып, аяғына дейін жеткіздің. Жарайсың!";
-    const mDone = [0, 1, 2].every(x => s2.done[key(m, x)]);
-    const nxt = l < 2 ? `<button class="btn blue sm" type="button" id="fbNext">${LV[l + 1]} деңгейге өту →</button>` : (m < 34 ? `<a class="btn blue sm" href="#m${m + 1}">${pad(m + 1)}-миссияға өту →</a>` : `<a class="btn blue sm" href="#">🏁 Барлық миссия</a>`);
+    const mDone = TLV.every((_, x) => s2.done[key(m, x)]);
+    const nxt = ti < NT - 1 ? `<button class="btn blue sm" type="button" id="fbNext">${ti + 2}-тапсырмаға өту (${LV[TLV[ti + 1]]}) →</button>` : (m < 34 ? `<a class="btn blue sm" href="#m${m + 1}">${pad(m + 1)}-миссияға өту →</a>` : `<a class="btn blue sm" href="#">🏁 Барлық миссия</a>`);
     fb.className = "fb ok anim-in";
-    fb.innerHTML = `<div class="fb-h"><span class="emo">🎉</span><span>Дұрыс! ${t.tests ? "Барлық " + total + " сынақтан өттің." : "Тапсырма орындалды."} ${first ? "+" + PTS[l] + " ұпай" : "(ұпай бұрын есептелген)"}</span></div>
+    fb.innerHTML = `<div class="fb-h"><span class="emo">🎉</span><span>Дұрыс! Барлық ${total} сынақтан өттің. ${first ? "+" + TPTS[ti] + " ұпай" : "(ұпай бұрын есептелген)"}</span></div>
       <div class="fb-b"><p>${praise}</p>
-      <p>📍 Сен қазір <b>${pad(m)}-миссияның ${LV[l].toLowerCase()} деңгейін</b> аяқтадың${mDone ? " — бұл миссия толық бағындырылды! 🏆" : "."} Жалпы ұпайың: <b>${KK.score()}</b>.</p>
+      <p>📍 Сен қазір <b>${pad(m)}-миссияның ${ti + 1}-тапсырмасын (${LV[TLV[ti]].toLowerCase()})</b> аяқтадың${mDone ? " — бұл миссия толық бағындырылды! 🏆" : "."} Жалпы ұпайың: <b>${KK.score()}</b>.</p>
       <div class="fb-next">${nxt}</div><div class="fb-tests">${rows}</div></div>`;
-    const nb = $("#fbNext"); if (nb) nb.onclick = () => { cur.l = l + 1; history.replaceState(null, "", "#m" + m + "-" + cur.l); drawTask(); drawStatus(); $("#b3").scrollIntoView({ block: "start" }) };
+    const nb = $("#fbNext"); if (nb) nb.onclick = () => { cur.t = ti + 1; history.replaceState(null, "", "#m" + m + "-" + cur.t); drawTask(); drawStatus(); $("#b3").scrollIntoView({ block: "start" }) };
     drawTabs(); drawStatus(); drawAside();
     if (!$("#doneTag")) $("#taskBox .tag").insertAdjacentHTML("afterend", ' <span class="tag ok" id="doneTag">✓ Орындалды</span>');
-    KK.sync(`${pad(m)}-миссия · ${LV[l]} ✓`).then(j => { if (j) { drawStatus(); drawAside() } });
+    KK.sync(`${pad(m)}-миссия · ${ti + 1}-тапсырма ✓`).then(j => { if (j) { drawStatus(); drawAside() } });
   } else {
     const part = pass > 0;
     fb.className = "fb " + (part ? "part" : "no") + " anim-in";
-    const head = t.tests ? (part ? `Жақын қалдың: ${pass} / ${total} сынақ өтті` : "Әзірге дұрыс емес. Қорықпа: қатені түзетуге болады") : "Тапсырма шарты толық орындалмады";
+    const head = part ? `Жақын қалдың: ${pass} / ${total} сынақ өтті` : "Әзірге дұрыс емес. Қорықпа: қатені түзетуге болады";
     fb.innerHTML = `<div class="fb-h"><span class="emo">${part ? "🔧" : "🐞"}</span><span>${head}</span></div>
       <div class="fb-b"><p><b>Нені түзету керек:</b></p><ul>${issues.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
       ${tries >= 2 ? `<p>💡 <b>Кеңес:</b> <span style="white-space:pre-wrap;font-family:var(--f-mono);font-size:13.5px">${esc(t.hint)}</span></p>` : `<p class="muted">Әрекет саны: ${tries}. Тағы бір рет қателессең, кеңес өзі шығады. Немесе «💡 Кеңес» батырмасын бас.</p>`}
@@ -319,8 +319,8 @@ async function check() {
 function refresh() { drawStatus(); drawAside(); if (!cur.m) drawList(); else drawTabs() }
 function render() { if (cur.m) drawMission(); else drawList(); drawStatus(); drawAside() }
 KK.header("missions.html");
-KK.start({ needLogin: true, section: () => cur.m ? `${pad(cur.m)}-миссия · ${LV[cur.l]}` : "34 баспалдақ", onChange: refresh });
-const p0 = parseHash(); cur = { m: p0.m, l: p0.m ? (p0.l === null ? firstOpen(p0.m) : p0.l) : 0 };
+KK.start({ needLogin: true, section: () => cur.m ? `${pad(cur.m)}-миссия · ${cur.t + 1}-тапсырма` : "34 баспалдақ", onChange: refresh });
+const p0 = parseHash(); cur = { m: p0.m, t: p0.m ? (p0.t === null ? firstOpen(p0.m) : p0.t) : 0 };
 if (cur.m) LS.set("kk-mission", cur.m);
 render();
 })();

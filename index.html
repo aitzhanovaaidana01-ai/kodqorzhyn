@@ -1140,6 +1140,7 @@ print(age + 1)</div>
   </div>
 </footer>
 
+<script src="missions-data.js?v=3"></script>
 <script>
 (function(){
 "use strict";
@@ -1225,7 +1226,7 @@ function drawOrder(){
 $("#orderReset").onclick=drawOrder;drawOrder();
 
 /* ---------- 3. missions ---------- */
-const STAGES=[
+const STAGES=window.KK_STAGES||[
  {r:"I",n:"Идея және мәселе қою",from:1,to:5},
  {r:"II",n:"Жоспарлау және ақпаратпен жұмыс",from:6,to:10},
  {r:"III",n:"Алгоритмдеу және бағдарламалау негіздері",from:11,to:22},
@@ -1233,7 +1234,7 @@ const STAGES=[
  {r:"V",n:"Жобаны IT арқылы іске асыру",from:29,to:32},
  {r:"VI",n:"Қорғау және рефлексия",from:33,to:34}
 ];
-const M=[
+const M=window.KK_MISSIONS?KK_MISSIONS.map(m=>[m.t,m.goals,m.res,m.e,m.demo.split("\n").slice(0,4).join("\n")]):[
  ["Менің цифрлық әлемім",["Информатиканың адам өміріндегі рөлін талқылау.","Ақпараттық технологиялардың қолданылу мысалдарын анықтау.","Жоба тақырыптарының тізімін жасау."],"IT қолданылатын кемінде үш саланы атайсың.","🌍"],
  ["Мәселені тап",["Мектеп, отбасы немесе қоғам өміріндегі шешуді қажет ететін мәселені анықтау.","«Кім үшін?», «Қандай мәселе?», «Қалай шешуге болады?» сұрақтарына жауап беру."],"Жобаның бастапқы мәселесі тұжырымдалады.","🔍"],
  ["Жоба идеясын таңда",["Бірнеше идеяны салыстыру.","Идеяны өзектілігі, орындалу мүмкіндігі және пайдалылығы бойынша бағалау."],"Жоба тақырыбы таңдалады.","💡"],
@@ -1754,8 +1755,8 @@ const PTS={p1:10,p2:10,p3:10,p4:10,p5:20,p6:20,p7:20,p8:20,p9:30,p10:30,p11:30,p
 function snapshot(){
   const pr=LS.get("kk-practice",{done:{}}),done=Object.keys(pr.done||{}).filter(k=>PTS[k]);
   const lab=LS.get("kk-lab",[]);
-  const ms=Object.keys((LS.get("kk-ms",{})||{}).done||{}),mp=[10,20,30];
-  return{section:SEC[curSection()],mission:LS.get("kk-mission",1)+"-миссия",practice:"миссия "+ms.length+"/102 · практика "+done.length+"/12",score:done.reduce((a,k)=>a+PTS[k],0)+ms.reduce((a,k)=>a+(mp[+k.split("-")[1]]||0),0),prog:ms.concat(done)};
+  const ms=Object.keys((LS.get("kk-ms2",{})||{}).done||{}).filter(k=>/^\d{1,2}\.[0-4]$/.test(k)),mp=[10,10,20,20,30];
+  return{section:SEC[curSection()],mission:LS.get("kk-mission",1)+"-миссия",practice:"миссия "+ms.length+"/170 · практика "+done.length+"/12",score:done.reduce((a,k)=>a+PTS[k],0)+ms.reduce((a,k)=>a+mp[+k.split(".")[1]],0),prog:ms.concat(done)};
 }
 let activeSec=LS.get("kk-active",0),lastSig="",sendT=null;
 function send(event){
