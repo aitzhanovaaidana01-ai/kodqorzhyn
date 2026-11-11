@@ -85,7 +85,7 @@ window.KK = (function () {
 
   /* ---------- header ---------- */
   function header(active) {
-    const links = [["index.html", "🏠 БАСТЫ БЕТ"], ["missions.html", "🪜 34 БАСПАЛДАҚ"], ["komek.html", "🧑‍🏫 ҰСТАЗДАН КӨМЕК"], ["oyin.html", "🎮 ОЙЫН"]];
+    const links = [["index.html", "🏠 БАСТЫ БЕТ"], ["missions.html", "🪜 34 БАСПАЛДАҚ"], ["kurs.html", "📚 МАТЕРИАЛДАР"], ["komek.html", "🧑‍🏫 ҰСТАЗДАН КӨМЕК"], ["oyin.html", "🎮 ОЙЫН"]];
     $("#top").innerHTML = `<div class="wrap"><a class="brand" href="index.html"><b>КОД</b><i>ҚОРЖЫН</i></a>
       <nav class="nav" aria-label="Бөлімдер">${links.map(l => `<a href="${l[0]}" class="${l[0] === active ? "on" : ""}"${l[0] === active ? ' aria-current="page"' : ""}>${l[1]}</a>`).join("")}</nav>
       <div class="who" id="who"></div>

@@ -591,6 +591,11 @@ footer b{color:var(--ink)}
   *,*::before,*::after{animation:none!important;transition:none!important}
   html{scroll-behavior:auto}
 }
+/* ===== Басты бет: тек курстың атауы мен автор. Қалған бөлімдер өз беттерінде (missions, kurs, komek, oyin). ===== */
+section.sec,.hero .term,.hero .stats{display:none!important}
+.hero{min-height:calc(100vh - 60px);min-height:calc(100dvh - 60px);display:flex;align-items:center}
+.hero>.wrap{width:100%}
+.nav a[aria-current]{color:#fff;background:var(--blue)}
 </style>
 </head>
 <body>
@@ -600,7 +605,7 @@ footer b{color:var(--ink)}
   <div class="wrap">
     <a class="brand" href="#hero"><b>КОД</b><i>ҚОРЖЫН</i></a>
     <nav class="nav" aria-label="Бөлімдер">
-      <a href="missions.html">🪜 34 БАСПАЛДАҚ</a><a href="komek.html">🧑‍🏫 ҰСТАЗДАН КӨМЕК</a><a href="#hook">ҚЫЗЫҚТЫРУ</a><a href="#concept">КОНЦЕПЦИЯ</a><a href="#structure">ҚҰРЫЛЫМ</a><a href="#process">ПРОЦЕСС</a><a href="#link">БАЙЛАНЫС</a><a href="#apply">ҚОЛДАНУ</a><a href="#hard">ҚИЫНДЫҚТАР</a><a href="#ai">AI КӨМЕКШІ</a><a href="#practice">ПРАКТИКА</a><a href="oyin.html" target="_blank" rel="noopener">🎮 ОЙЫН</a><a href="#final">ҚОРЫТЫНДЫ</a>
+      <a href="index.html" aria-current="page">🏠 БАСТЫ БЕТ</a><a href="missions.html">🪜 34 БАСПАЛДАҚ</a><a href="kurs.html">📚 МАТЕРИАЛДАР</a><a href="komek.html">🧑‍🏫 ҰСТАЗДАН КӨМЕК</a><a href="oyin.html">🎮 ОЙЫН</a>
     </nav>
     <button class="btn ghost sm" id="themeBtn" type="button" aria-label="Тақырып түсін ауыстыру"><span class="emo" id="themeIco">🌙</span></button>
   </div>
@@ -626,9 +631,10 @@ footer b{color:var(--ink)}
         <div class="stat"><b>70%</b><span>практика</span></div>
       </div>
       <div class="cta">
-        <a class="btn primary" href="#hook"><span class="emo">🚀</span> Миссияны бастау</a>
-        <a class="btn ghost" href="#process"><span class="emo">🐍</span> Python зертханасы</a>
-        <a class="btn blue" href="oyin.html" target="_blank" rel="noopener"><span class="emo">🎮</span> «Блок әлемі» ойыны</a>
+        <a class="btn primary" href="missions.html"><span class="emo">🪜</span> 34 баспалдақ</a>
+        <a class="btn blue" href="kurs.html"><span class="emo">📚</span> Сабақ материалдары</a>
+        <a class="btn ghost" href="komek.html"><span class="emo">🧑‍🏫</span> Ұстаздан көмек</a>
+        <a class="btn ghost" href="oyin.html"><span class="emo">🎮</span> «Блок әлемі» ойыны</a>
       </div>
     </div>
     <figure class="photo-card" style="margin:0">
@@ -1750,7 +1756,7 @@ $("#lgYes").onclick=()=>{
 /* ---------- activity tracking ---------- */
 const SEC={hero:"Басты бет",hook:"Қызықтыру",concept:"Концепция",structure:"Құрылым (34 миссия)",process:"Python зертханасы",link:"Байланыс",apply:"Қолдану",hard:"Қиындықтар",ai:"AI көмекші",practice:"Практикалық жұмыстар",final:"Қорытынды"};
 const secEls=Object.keys(SEC).map(id=>document.getElementById(id)).filter(Boolean);
-function curSection(){let c="hero";secEls.forEach(s=>{if(s.getBoundingClientRect().top<innerHeight*.4)c=s.id});return c}
+function curSection(){return "hero"}
 const PTS={p1:10,p2:10,p3:10,p4:10,p5:20,p6:20,p7:20,p8:20,p9:30,p10:30,p11:30,p12:30};
 function snapshot(){
   const pr=LS.get("kk-practice",{done:{}}),done=Object.keys(pr.done||{}).filter(k=>PTS[k]);
