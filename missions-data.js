@@ -7,12 +7,7 @@
       YouTube сілтемесі де жарайды:  5: "https://youtu.be/XXXXXXXXXXX",
    ===================================================================== */
 window.KK_VIDEOS = {
-  8: "videos/v1.mp4",    // Айнымалы, енгізу, шығару
-  9: "videos/v1.mp4",
-  11: "videos/v2.mp4",   // Шарт пен цикл
-  14: "videos/v2.mp4",
-  19: "videos/v3.mp4",   // Екілік іздеу: def, while, return
-  20: "videos/v3.mp4"
+  // мысалы:  5: "https://youtu.be/XXXXXXXXXXX",
 };
 
 window.KK_STAGES = [
