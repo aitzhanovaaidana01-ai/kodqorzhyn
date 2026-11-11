@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Блок әлемі</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;900&family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: блок-пиксель ойын әлемі. Бір күңгірт ойын көрінісі (әдейі бір тақырып): тас панельдер, сатылы көлеңкелер, пиксель кейіпкерлер. */
+:root{
+  color-scheme:dark;
+  --bg:#121419; --panel:#2a2d35; --panel-hi:#454954; --panel-lo:#17181d; --ink:#F4F1E8; --muted:#B5B9C6;
+  --green:#5BAA32; --green-lo:#3A7A1C; --red:#E3263C; --red-lo:#9D1426; --blue:#2F6BFF; --blue-lo:#1A3FA8;
+  --gold:#FFD23F; --cyan:#5EF0FF; --lava:#FF6A1F;
+  --f-display:"Unbounded","Golos Text",system-ui,sans-serif;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --px:4px;
+}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+  background-image:linear-gradient(rgba(10,11,15,.88),rgba(10,11,15,.94)),var(--t-dirt,none);background-size:auto,64px 64px;image-rendering:pixelated}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:#1b1d23}
+h1,h2,h3{font-family:var(--f-display);margin:0;line-height:1.15;text-wrap:balance}
+p{margin:0}
+img.px{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.emo{display:inline-block;font-style:normal;filter:drop-shadow(0 3px 0 rgba(0,0,0,.55)) drop-shadow(0 0 2px rgba(0,0,0,.5))}
+
+/* stone panel + pixel buttons */
+.panel{background:var(--panel);box-shadow:inset 4px 4px 0 var(--panel-hi),inset -4px -4px 0 var(--panel-lo),0 6px 0 #0a0b0e;padding:20px;min-width:0}
+.pbtn{appearance:none;border:0;cursor:pointer;font:700 15px/1 var(--f-body);color:#fff;padding:14px 18px;display:inline-flex;align-items:center;gap:8px;text-decoration:none;
+  background:var(--c,var(--green));box-shadow:inset 3px 3px 0 rgba(255,255,255,.28),inset -3px -3px 0 rgba(0,0,0,.35),0 5px 0 var(--cl,var(--green-lo));text-shadow:2px 2px 0 rgba(0,0,0,.45);transition:transform .08s,filter .15s}
+.pbtn:hover{filter:brightness(1.1)}
+.pbtn:active{transform:translateY(4px);box-shadow:inset 3px 3px 0 rgba(255,255,255,.2),inset -3px -3px 0 rgba(0,0,0,.35),0 1px 0 var(--cl,var(--green-lo))}
+.pbtn[disabled]{filter:grayscale(1) brightness(.7);cursor:not-allowed}
+.pbtn.red{--c:var(--red);--cl:var(--red-lo)} .pbtn.blue{--c:var(--blue);--cl:var(--blue-lo)} .pbtn.stone{--c:#6b707c;--cl:#3d4048} .pbtn.gold{--c:#d9a400;--cl:#8a6800}
+.pbtn.sm{padding:10px 13px;font-size:14px}
+.title-txt{font-family:var(--f-display);font-weight:900;text-transform:uppercase;letter-spacing:.02em;text-shadow:3px 3px 0 #000,6px 6px 0 rgba(0,0,0,.35)}
+
+/* HUD */
+.hud{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:#1b1d23;box-shadow:inset 0 -4px 0 #0c0d10}
+.hud .wrap{display:flex;align-items:center;gap:14px;min-height:64px;flex-wrap:wrap;padding-block:8px}
+.brand{font-family:var(--f-display);font-weight:900;font-size:17px;text-shadow:2px 2px 0 #000;cursor:pointer;white-space:nowrap;background:none;border:0;padding:0}
+.brand b{color:var(--red)} .brand i{font-style:normal;color:#7FA6FF}
+.hud-hero{display:flex;align-items:center;gap:10px;min-width:0;flex:1;flex-wrap:wrap}
+.hud-hero .ava{width:40px;height:40px;background:#0f1014;box-shadow:inset 2px 2px 0 #000,inset -2px -2px 0 #3a3d46;display:grid;place-items:center;flex:none}
+.hud-hero .ava img{width:32px;height:32px}
+.xp{flex:1;max-width:240px;min-width:110px}
+.xp .lbl{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--muted)}
+.xp .bar{height:12px;background:#0d0e12;box-shadow:inset 2px 2px 0 #000;margin-top:3px;position:relative;overflow:hidden}
+.xp .bar i{position:absolute;inset:0 auto 0 0;background:repeating-linear-gradient(90deg,#7CFF4F 0 8px,#5BD236 8px 10px);transition:width .6s steps(12)}
+.stat{display:flex;align-items:center;gap:6px;font-weight:800;font-family:var(--f-mono);font-size:15px;white-space:nowrap}
+.stat img{width:20px;height:20px}
+.hud-nav{display:flex;gap:8px;flex-wrap:wrap}
+
+/* screens */
+.screen{padding-block:24px 60px;animation:scrIn .35s steps(6)}
+@keyframes scrIn{from{opacity:0;transform:translateY(12px)}}
+
+/* landscape banner */
+.scene{position:relative;overflow:hidden;background-color:#7ec8ff;background-size:cover;background-position:center bottom;image-rendering:pixelated;box-shadow:inset 4px 4px 0 rgba(255,255,255,.15),inset -4px -4px 0 rgba(0,0,0,.45),0 6px 0 #0a0b0e}
+.clouds{position:absolute;inset:0 0 auto 0;height:45%;background-repeat:repeat-x;background-size:auto 100%;image-rendering:pixelated;animation:drift 60s linear infinite;opacity:.95;pointer-events:none}
+@keyframes drift{to{background-position:-1280px 0}}
+.embers{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.embers i{position:absolute;bottom:-10px;width:6px;height:6px;background:#FFB43A;box-shadow:0 0 8px #FF6A1F;animation:ember linear infinite}
+@keyframes ember{to{transform:translateY(-110vh) translateX(30px);opacity:0}}
+.drip i{background:#5EF0FF;box-shadow:0 0 10px #5EF0FF;animation-name:sparkle}
+@keyframes sparkle{0%,100%{opacity:.15}50%{opacity:1}}
+
+.hero-banner{min-height:340px;display:flex;align-items:flex-start;padding:34px 28px 120px}
+.hero-banner .txt{position:relative;z-index:2;max-width:640px}
+.hero-banner h1{font-size:clamp(34px,6.4vw,74px);color:#fff;line-height:1}
+.hero-banner h1 b{color:var(--gold)}
+.hero-banner p{margin-top:12px;font-size:18px;font-weight:600;color:#fff;text-shadow:2px 2px 0 rgba(0,0,0,.6);max-width:52ch}
+.hero-banner .btns{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+.walker{position:absolute;bottom:13%;z-index:2;animation:walk 18s linear infinite}
+.walker img{width:64px;height:64px;animation:step .5s steps(2) infinite}
+.walker.w2{animation-delay:-2.2s}.walker.w2 img{width:52px;height:52px}
+@keyframes walk{from{left:-90px}to{left:105%}}
+@keyframes step{50%{transform:translateY(-4px)}}
+
+/* section heading */
+.h-sec{display:flex;align-items:center;gap:12px;margin:38px 0 16px}
+.h-sec h2{font-size:clamp(20px,2.8vw,28px);text-shadow:3px 3px 0 #000}
+.h-sec .ln{flex:1;height:6px;background:repeating-linear-gradient(90deg,var(--red) 0 12px,transparent 12px 16px,var(--blue) 16px 28px,transparent 28px 32px)}
+
+/* characters */
+.chars{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.char{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center;position:relative}
+.char .stage{width:118px;height:118px;display:grid;place-items:center;background:radial-gradient(circle at 50% 70%,rgba(255,255,255,.12),transparent 65%),#16171c;box-shadow:inset 3px 3px 0 #000,inset -3px -3px 0 #3a3d46}
+.char .stage img{width:96px;height:96px;animation:idle 1.6s steps(2) infinite}
+.char:nth-child(2n) .stage img{animation-delay:-.8s}
+@keyframes idle{50%{transform:translateY(-5px)}}
+.char h3{font-size:18px}
+.char .role{display:inline-block;margin:4px 0 6px;font:700 11px/1 var(--f-body);letter-spacing:.1em;text-transform:uppercase;padding:5px 8px;background:#16171c;color:var(--gold)}
+.char.enemy .role{color:#FF7A8A}
+.char.mentor .role{color:var(--cyan)}
+.char p{font-size:14.5px;color:var(--muted)}
+.char .pick{margin-top:10px}
+.char.chosen{box-shadow:inset 4px 4px 0 var(--panel-hi),inset -4px -4px 0 var(--panel-lo),0 0 0 4px var(--gold),0 6px 0 #0a0b0e}
+.char.chosen::after{content:"ТАҢДАЛДЫ";position:absolute;top:-12px;right:14px;font:900 11px/1 var(--f-display);background:var(--gold);color:#000;padding:6px 8px}
+
+.how{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.how .panel h3{font-size:16px;margin:10px 0 6px}
+.how .panel p{color:var(--muted);font-size:14.5px}
+.how .big{font-size:34px}
+.biomes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.biome-card{min-height:190px;display:flex;flex-direction:column;justify-content:flex-end;padding:16px;cursor:pointer;border:0;text-align:left}
+.biome-card .tag{align-self:flex-start;font:900 12px/1 var(--f-display);padding:7px 9px;color:#000;margin-bottom:auto}
+.biome-card h3{font-size:20px;color:#fff;text-shadow:3px 3px 0 #000}
+.biome-card p{font-weight:600;color:#fff;text-shadow:2px 2px 0 #000;font-size:14.5px}
+
+/* map */
+.map-biome{margin-bottom:26px;padding:22px}
+.map-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;position:relative;z-index:2}
+.map-head h2{font-size:clamp(20px,3vw,30px);color:#fff;text-shadow:3px 3px 0 #000}
+.map-head .tag{font:900 12px/1 var(--f-display);padding:7px 9px;color:#000;display:inline-block;margin-bottom:8px}
+.map-head .prog{font:800 14px/1 var(--f-mono);background:rgba(0,0,0,.55);padding:8px 10px;color:#fff}
+.levels{position:relative;z-index:2;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-top:70px}
+.lv{all:unset;cursor:pointer;position:relative;aspect-ratio:1;max-width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background-size:100% 100%;image-rendering:pixelated;
+  box-shadow:inset 4px 4px 0 rgba(255,255,255,.25),inset -4px -4px 0 rgba(0,0,0,.45),0 6px 0 rgba(0,0,0,.6);transition:transform .15s}
+.lv:hover{transform:translateY(-4px)}
+.lv:focus-visible{outline:4px solid var(--gold)}
+.lv .n{font:900 clamp(15px,2.2vw,22px)/1 var(--f-display);color:#fff;text-shadow:3px 3px 0 #000}
+.lv .ty{font-size:clamp(16px,2.2vw,22px)}
+.lv .stars{font-size:12px;letter-spacing:1px;color:var(--gold);text-shadow:1px 1px 0 #000;min-height:14px}
+.lv.locked{cursor:not-allowed;filter:grayscale(.85) brightness(.55)}
+.lv.locked:hover{transform:none}
+.lv.next::after{content:"";position:absolute;inset:-6px;border:4px solid var(--gold);animation:blinkB 1s steps(2) infinite}
+@keyframes blinkB{50%{border-color:transparent}}
+.map-tools{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.confirm{display:none;gap:8px;align-items:center;flex-wrap:wrap;font-weight:700}
+.confirm.on{display:inline-flex}
+
+/* level */
+.lvl-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.lvl-top h2{font-size:clamp(18px,2.6vw,26px);text-shadow:3px 3px 0 #000}
+.lvl-top .crumb{font:800 13px/1 var(--f-mono);color:var(--gold);margin-bottom:6px}
+.lvl-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:20px;align-items:start}
+.arena{min-height:380px;position:relative}
+.fighter{position:absolute;bottom:16%;display:flex;flex-direction:column;align-items:center;gap:8px;z-index:3}
+.fighter.me{left:10%}.fighter.foe{right:10%}
+.fighter img{width:min(132px,22vw);height:auto;aspect-ratio:1}
+.fighter.me img{animation:idle 1.4s steps(2) infinite}
+.fighter.foe img{animation:wob 1.2s steps(3) infinite}
+@keyframes wob{33%{transform:translateY(-4px) rotate(-3deg)}66%{transform:translateY(-2px) rotate(3deg)}}
+.fighter .name{font:900 12px/1 var(--f-display);background:rgba(0,0,0,.65);padding:6px 8px;text-shadow:1px 1px 0 #000}
+.hearts{display:flex;gap:4px}
+.hearts img{width:24px;height:auto}
+.hpbar{display:flex;gap:3px}
+.hpbar i{width:16px;height:14px;background:#E3263C;box-shadow:inset 2px 2px 0 rgba(255,255,255,.35),inset -2px -2px 0 rgba(0,0,0,.4)}
+.hpbar i.off{background:#2a2d35}
+.fighter.atk img{animation:atk .45s steps(4)}
+@keyframes atk{50%{transform:translateX(60px) scale(1.1)}}
+.fighter.hit img{animation:hit .5s steps(4)}
+@keyframes hit{0%,100%{filter:none}25%,75%{filter:brightness(3) saturate(0);transform:translateX(10px)}50%{transform:translateX(-10px)}}
+.fighter.foe.atk img{animation:atkL .45s steps(4)}
+@keyframes atkL{50%{transform:translateX(-60px) scale(1.1)}}
+.fighter.dead img{animation:die .8s steps(6) forwards}
+@keyframes die{to{transform:scale(.2) rotate(90deg);opacity:0}}
+.bolt{position:absolute;z-index:4;font:900 22px/1 var(--f-mono);color:var(--cyan);text-shadow:2px 2px 0 #000,0 0 10px var(--cyan);bottom:28%;left:22%;animation:fly .5s steps(8) forwards;pointer-events:none}
+.bolt.back{color:#FF5C70;text-shadow:2px 2px 0 #000,0 0 10px #FF5C70;left:auto;right:22%;animation-name:flyL}
+@keyframes fly{to{left:72%}}
+@keyframes flyL{to{right:72%}}
+.dmg{position:absolute;z-index:5;font:900 26px/1 var(--f-display);color:#fff;text-shadow:3px 3px 0 #000;animation:dmg .9s steps(9) forwards;pointer-events:none}
+@keyframes dmg{to{transform:translateY(-60px);opacity:0}}
+.particle{position:absolute;width:10px;height:10px;z-index:6;pointer-events:none;animation:burst .8s steps(8) forwards}
+@keyframes burst{to{transform:translate(var(--dx),var(--dy));opacity:0}}
+.shake{animation:shk .4s steps(6)}
+@keyframes shk{25%{transform:translate(-6px,3px)}50%{transform:translate(6px,-3px)}75%{transform:translate(-3px,0)}}
+.bot-tip{position:absolute;left:12px;top:12px;right:12px;display:flex;gap:10px;align-items:flex-start;z-index:4}
+.bot-tip img{width:44px;height:44px;flex:none}
+.bubble{background:#fff;color:#111;font-size:14px;font-weight:600;padding:9px 12px;position:relative;box-shadow:3px 3px 0 #000;max-width:440px}
+
+.qcard{display:flex;flex-direction:column;gap:14px}
+.qhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.qdots{display:flex;gap:5px}
+.qdots i{width:18px;height:10px;background:#16171c;box-shadow:inset 2px 2px 0 #000}
+.qdots i.ok{background:#5BD236}.qdots i.cur{background:var(--gold)}
+.qtxt{font-size:18px;font-weight:700}
+.code{background:#0d0e12;box-shadow:inset 3px 3px 0 #000,inset -3px -3px 0 #2a2d35;padding:14px 16px;font:15px/1.65 var(--f-mono);color:#E6ECFF;white-space:pre;overflow-x:auto;margin:0}
+.code .k{color:#FFC86B}.code .s{color:#FF9AA8}.code .n{color:#7FB2FF}.code .c{color:#7d8597}
+.opts{display:grid;gap:10px}
+.opt{all:unset;cursor:pointer;padding:12px 14px;font:600 16px/1.3 var(--f-mono);background:#3a3e48;box-shadow:inset 3px 3px 0 rgba(255,255,255,.12),inset -3px -3px 0 rgba(0,0,0,.4),0 4px 0 #15161a;white-space:pre-wrap}
+.opt:hover{background:#474c58}
+.opt:focus-visible{outline:3px solid var(--gold)}
+.opt.ok{background:#2f7a1c}.opt.bad{background:#8f1a2b;animation:shk .4s steps(6)}
+.in-row{display:flex;gap:10px;flex-wrap:wrap}
+.in-row input{flex:1;min-width:160px;background:#0d0e12;border:0;box-shadow:inset 3px 3px 0 #000,inset -3px -3px 0 #2a2d35;color:#fff;font:16px var(--f-mono);padding:12px 14px}
+.in-row input:focus{outline:3px solid var(--gold)}
+.blines{display:grid;gap:6px}
+.bline{all:unset;cursor:pointer;display:flex;gap:12px;padding:10px 12px;font:15px/1.4 var(--f-mono);background:#0d0e12;box-shadow:inset 2px 2px 0 #000;white-space:pre}
+.bline .ln{color:#7d8597;width:18px;flex:none}
+.bline:hover{background:#1a1c24;outline:2px solid #5a5f6c}
+.bline:focus-visible{outline:3px solid var(--gold)}
+.bline.ok{background:#1d4a12}.bline.bad{background:#5c1220}
+.ord-out,.ord-in{display:grid;gap:6px;min-height:52px;padding:8px;background:#16171c;box-shadow:inset 2px 2px 0 #000}
+.ord-out:empty::before{content:"Жолдарды дұрыс ретпен бас ↓";color:#7d8597;font-size:14px;padding:6px}
+.ochip{all:unset;cursor:pointer;padding:9px 12px;font:15px/1.3 var(--f-mono);white-space:pre;background:#3a3e48;box-shadow:inset 2px 2px 0 rgba(255,255,255,.12),inset -2px -2px 0 rgba(0,0,0,.4)}
+.ochip:hover{background:#4a4f5c}
+.ochip:focus-visible{outline:3px solid var(--gold)}
+.fb{padding:12px 14px;font-size:15px;display:none}
+.fb.on{display:block;animation:scrIn .3s steps(4)}
+.fb.ok{background:#1d4a12;box-shadow:inset 4px 0 0 #5BD236}
+.fb.bad{background:#4a1220;box-shadow:inset 4px 0 0 #FF5C70}
+.fb b{display:block;margin-bottom:3px}
+
+/* board */
+.board-wrap{padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center}
+.board{position:relative;display:grid;margin:0 auto;box-shadow:0 0 0 4px rgba(0,0,0,.6),0 10px 0 rgba(0,0,0,.5)}
+.cell{width:var(--S);height:var(--S);background-size:var(--S) var(--S);image-rendering:pixelated;position:relative}
+.cell.floor{box-shadow:inset 0 -3px 0 rgba(0,0,0,.28),inset 0 2px 0 rgba(255,255,255,.12)}
+.cell.haz{animation:flow 2.4s linear infinite}
+@keyframes flow{to{background-position:var(--S) var(--S)}}
+.cell .blk{position:absolute;inset:2px;background-size:100% 100%;image-rendering:pixelated;box-shadow:inset 3px 3px 0 rgba(255,255,255,.25),inset -3px -3px 0 rgba(0,0,0,.5),0 4px 0 rgba(0,0,0,.45)}
+.cell .blk.break{animation:brk .32s steps(4) forwards}
+@keyframes brk{50%{filter:brightness(1.6);transform:scale(.9) rotate(4deg)}to{transform:scale(.2);opacity:0}}
+.cell .goal{position:absolute;inset:8%;display:grid;place-items:center;animation:idle 1.2s steps(2) infinite}
+.cell .goal img{width:100%;height:100%}
+.portal{position:absolute;inset:6%;background:repeating-conic-gradient(from 0deg,#7b3fe4 0 30deg,#b47bff 30deg 60deg,#4a2196 60deg 90deg);animation:spinP 2s steps(12) infinite;box-shadow:0 0 18px #b47bff}
+@keyframes spinP{to{transform:rotate(360deg)}}
+.hero-tok{position:absolute;left:0;top:0;width:var(--S);height:var(--S);z-index:3;transition:transform .24s steps(4);pointer-events:none}
+.hero-tok img{width:86%;height:86%;margin:4% auto 0;animation:idle 1s steps(2) infinite}
+.hero-tok .dir{position:absolute;right:-6px;top:50%;width:0;height:0;border-left:10px solid var(--gold);border-top:7px solid transparent;border-bottom:7px solid transparent;filter:drop-shadow(1px 1px 0 #000);transform-origin:calc(-1 * var(--S) / 2 + 6px) 50%}
+.hero-tok.fall img{animation:fall .6s steps(6) forwards}
+@keyframes fall{to{transform:scale(.1) rotate(180deg);opacity:0}}
+.hero-tok.bump img{animation:shk .35s steps(5)}
+.board-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;font-weight:700;color:#fff;background:rgba(0,0,0,.55);padding:8px 10px}
+.board-legend span{display:flex;align-items:center;gap:6px}
+.board-legend i{width:16px;height:16px;background-size:100% 100%;image-rendering:pixelated;display:inline-block;box-shadow:0 0 0 2px #000}
+
+.story{font-size:15.5px;color:var(--muted)}
+.story b{color:var(--ink)}
+.palette{display:flex;flex-wrap:wrap;gap:8px}
+.palette button{all:unset;cursor:pointer;font:700 13.5px/1 var(--f-mono);padding:9px 10px;background:#3a3e48;color:#FFC86B;box-shadow:inset 2px 2px 0 rgba(255,255,255,.12),inset -2px -2px 0 rgba(0,0,0,.45),0 3px 0 #15161a}
+.palette button:hover{background:#4a4f5c}
+.palette button:focus-visible{outline:3px solid var(--gold)}
+.editor{display:grid;grid-template-columns:auto minmax(0,1fr);background:#0d0e12;box-shadow:inset 3px 3px 0 #000,inset -3px -3px 0 #2a2d35}
+.gutter{padding:12px 6px 12px 12px;font:15px/1.65 var(--f-mono);color:#5a6070;text-align:right;user-select:none;overflow:hidden;max-height:300px}
+.gutter div.cur{color:#000;background:var(--gold)}
+.gutter div.err{color:#fff;background:var(--red)}
+.editor textarea{resize:vertical;min-height:190px;max-height:300px;border:0;outline:0;background:transparent;color:#E6ECFF;font:15px/1.65 var(--f-mono);padding:12px 12px 12px 8px;white-space:pre;overflow:auto;tab-size:4}
+.editor:focus-within{outline:3px solid var(--gold)}
+.run-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.lines-info{font:700 13px/1 var(--f-mono);color:var(--muted);margin-left:auto}
+.console{background:#0d0e12;box-shadow:inset 3px 3px 0 #000;padding:10px 12px;font:14px/1.5 var(--f-mono);color:#BFF5DA;min-height:52px;max-height:150px;overflow:auto;white-space:pre-wrap}
+.console .e{color:#FF8A9A}.console .w{color:var(--gold)}
+.ref{display:none}
+.ref.on{display:block}
+
+/* modal */
+.modal{position:fixed;inset:0;z-index:80;background:rgba(5,6,9,.78);display:grid;place-items:center;padding:20px max(16px,env(safe-area-inset-right,0px)) 20px max(16px,env(safe-area-inset-left,0px))}
+.modal .panel{width:min(480px,100%);text-align:center;padding:28px 24px;animation:pop .45s steps(6)}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+.modal h2{font-size:26px;text-shadow:3px 3px 0 #000}
+.modal .mstars{font-size:46px;letter-spacing:6px;margin:12px 0;color:#3a3d46}
+.modal .mstars span{display:inline-block}
+.modal .mstars span.on{color:var(--gold);text-shadow:3px 3px 0 #000;animation:starIn .5s steps(5) both}
+@keyframes starIn{from{transform:scale(0) rotate(-90deg)}}
+.modal p{color:var(--muted)}
+.modal .rew{display:flex;justify-content:center;gap:18px;margin:14px 0;font:800 18px/1 var(--f-mono)}
+.modal .rew span{display:flex;gap:6px;align-items:center}
+.modal .rew img{width:22px;height:22px}
+.modal .mbtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.modal img.big{width:96px;height:96px;margin:0 auto 6px}
+
+/* daily */
+.daily-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;margin-bottom:18px}
+.streak{display:flex;gap:6px;flex-wrap:wrap}
+.streak i{width:30px;height:30px;display:grid;place-items:center;font-style:normal;font:800 11px/1 var(--f-mono);background:#16171c;box-shadow:inset 2px 2px 0 #000;color:#5a6070}
+.streak i.on{background:#d9a400;color:#000;box-shadow:inset 2px 2px 0 rgba(255,255,255,.35),inset -2px -2px 0 rgba(0,0,0,.35)}
+
+footer{padding-block:26px;background:#1b1d23;box-shadow:inset 0 4px 0 #0c0d10;color:var(--muted);font-size:14px}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+footer b{color:var(--ink)}
+
+@media (max-width:980px){
+  .chars,.how,.biomes{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .lvl-grid{grid-template-columns:minmax(0,1fr)}
+  .levels{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:40px}
+}
+@media (max-width:640px){
+  .chars,.how,.biomes{grid-template-columns:minmax(0,1fr)}
+  .hero-banner{padding:24px 16px 110px;min-height:300px}
+  .char .stage{width:92px;height:92px}.char .stage img{width:72px;height:72px}
+  .arena{min-height:300px}
+  .fighter.me{left:4%}.fighter.foe{right:4%}
+  .hud .wrap{gap:10px}
+  .hud-hero{order:3;flex-basis:100%}
+  .xp{min-width:0;flex:1 1 140px}
+  .xp{max-width:none}
+  .daily-head{grid-template-columns:minmax(0,1fr)}
+  .map-biome{padding:16px}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<header class="hud">
+  <div class="wrap">
+    <button class="brand" type="button" data-go="home"><b>КОД</b><i>ҚОРЖЫН</i> · Блок әлемі</button>
+    <div class="hud-hero">
+      <div class="ava"><img class="px" id="hudAva" alt=""></div>
+      <div class="xp"><div class="lbl"><span id="hudRank">Жаңа бастаушы</span><span id="hudXp">0 XP</span></div><div class="bar"><i id="hudBar" style="width:0"></i></div></div>
+      <span class="stat" title="Кристалдар"><img class="px" id="hudCry" alt="Кристалл">×<span id="hudCryN">0</span></span>
+      <span class="stat" title="Күнделікті серия"><span class="emo">🔥</span><span id="hudStreak">0</span></span>
+    </div>
+    <nav class="hud-nav" aria-label="Мәзір">
+      <button class="pbtn sm stone" type="button" data-go="map">🗺️ Карта</button>
+      <button class="pbtn sm gold" type="button" data-go="daily">📅 Күнделікті</button>
+      <button class="pbtn sm stone" type="button" id="sndBtn" aria-label="Дыбыс">🔊</button>
+      <a class="pbtn sm blue" href="index.html" target="_blank" rel="noopener">← Сайт</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- HOME -->
+<section class="screen" id="scr-home">
+  <div class="wrap">
+    <div class="scene hero-banner" id="homeScene">
+      <div class="clouds" id="homeClouds"></div>
+      <div class="txt">
+        <h1 class="title-txt">Блок <b>әлемі</b></h1>
+        <p>Есепті шеш, кодты дұрыс жаз — сонда ғана жол ашылады. Үш әлем, 18 деңгей және күнделікті ми жаттығуы.</p>
+        <div class="btns">
+          <button class="pbtn" type="button" data-go="map">▶ Ойынды бастау</button>
+          <button class="pbtn gold" type="button" data-go="daily">📅 Күнделікті жаттығу</button>
+        </div>
+      </div>
+      <div class="walker"><img class="px" id="walk1" alt=""></div>
+      <div class="walker w2"><img class="px" id="walk2" alt=""></div>
+    </div>
+
+    <div class="h-sec"><h2>Кейіпкерлер</h2><span class="ln"></span></div>
+    <div class="chars" id="chars"></div>
+
+    <div class="h-sec"><h2>Қалай ойнаймыз?</h2><span class="ln"></span></div>
+    <div class="how">
+      <div class="panel"><span class="big emo">⚔️</span><h3>Шайқас деңгейі</h3><p>Қате-жаулар кодпен шабуыл жасайды. Кодтың нәтижесін болжа, бос орынды толтыр, қатесі бар жолды тап немесе жолдарды ретке қой. Әр дұрыс жауап жауға соққы береді. Қате жауап бір жүрегіңді алады.</p></div>
+      <div class="panel"><span class="big emo">🧭</span><h3>Жол деңгейі</h3><p>Кейіпкерді Python командаларымен жүргіз: <code>move()</code>, <code>left()</code>, <code>right()</code>, <code>mine()</code>. Циклмен қысқа жазсаң, 3 жұлдыз аласың. Су, құрдым мен лавадан сақтан!</p></div>
+      <div class="panel"><span class="big emo">📅</span><h3>Күнделікті жаттығу</h3><p>Күн сайын 5 жаңа тапсырма: 2 оңай, 2 орташа, 1 күрделі. Серияңды үзбей, миыңды тренажердегідей шыңда.</p></div>
+    </div>
+
+    <div class="h-sec"><h2>Үш әлем: оңайдан күрделіге</h2><span class="ln"></span></div>
+    <div class="biomes" id="biomeCards"></div>
+  </div>
+</section>
+
+<!-- MAP -->
+<section class="screen" id="scr-map" hidden>
+  <div class="wrap">
+    <div class="h-sec" style="margin-top:6px"><h2>Әлемдер картасы</h2><span class="ln"></span></div>
+    <div id="mapBiomes"></div>
+    <div class="map-tools">
+      <button class="pbtn sm stone" type="button" id="unlockAll">🔓 Барлық деңгейді ашу (мұғалімге)</button>
+      <button class="pbtn sm red" type="button" id="resetAsk">🗑️ Прогресті тазалау</button>
+      <span class="confirm" id="resetConfirm">Барлық прогресс өшеді. Сенімдісің бе?
+        <button class="pbtn sm red" type="button" id="resetYes">Иә, тазала</button>
+        <button class="pbtn sm stone" type="button" id="resetNo">Жоқ</button></span>
+    </div>
+  </div>
+</section>
+
+<!-- LEVEL -->
+<section class="screen" id="scr-level" hidden>
+  <div class="wrap">
+    <div class="lvl-top">
+      <div><div class="crumb" id="lvCrumb"></div><h2 id="lvTitle"></h2></div>
+      <button class="pbtn sm stone" type="button" id="lvBack">← Артқа</button>
+    </div>
+    <div class="lvl-grid">
+      <div class="scene" id="lvScene"></div>
+      <div class="panel" id="lvPanel"></div>
+    </div>
+  </div>
+</section>
+
+<!-- DAILY -->
+<section class="screen" id="scr-daily" hidden>
+  <div class="wrap">
+    <div class="daily-head panel">
+      <div><h2 style="font-size:22px">📅 Күнделікті ми жаттығуы</h2><p style="color:var(--muted);margin-top:6px" id="dailyInfo"></p></div>
+      <div class="streak" id="streakRow" aria-label="Соңғы 7 күн"></div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap" id="dailyStart"></div>
+  </div>
+</section>
+</main>
+
+<div class="modal" id="modal" hidden><div class="panel" id="modalBox"></div></div>
+
+<footer><div class="wrap"><div><b>«КОДҚОРЖЫН: 34 миссия — өз жобаңа 34 қадам»</b> курсына арналған логикалық ойын-тренажер</div><div>Авторы: <b>Айтжанова Айдана Оңғарбекқызы</b>, Мұқағали Мақатаев атындағы №74 мектеп-гимназия</div></div></footer>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const REDUCE=matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ================= PIXEL ART ================= */
+const PAL={k:"#1b1b1b",h:"#2a1a12",s:"#e8b98f",S:"#c9926a",w:"#ffffff",m:"#8a3b2e",b:"#2f6bff",B:"#1a3fa8",r:"#e3263c",R:"#9d1426",g:"#a7b0c2",G:"#5b6378",c:"#5ef0ff",C:"#1aa7c4",y:"#ffd23f",Y:"#c99a00",j:"#34446e",n:"#8b5a2b",N:"#5a3818",o:"#ff8a1f",p:"#7b3fe4",P:"#4a2196",q:"#b47bff"};
+function sprite(rows){const w=Math.max(...rows.map(r=>r.length)),h=rows.length;const c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d");rows.forEach((r,yy)=>[...r].forEach((ch,xx)=>{if(PAL[ch]){x.fillStyle=PAL[ch];x.fillRect(xx,yy,1,1)}}));return c.toDataURL()}
+const SPR={
+ aibar:sprite(["....hhhhhhhh....","....hhhhhhhh....","....hssssssh....","....ssssssss....","....swksswks....","....ssssssss....","....sssmmsss....","..bbbbbbbbbbbb..","..bbbbwbbwbbbb..","..bbBbbbbbbBbb..","..ssbbbbbbbbss..","....BBBBBBBB....","....jjj..jjj....","....jjj..jjj....","....jjj..jjj....","....kkk..kkk...."]),
+ aruzhan:sprite(["....hhhhhhhh....","...hhhhhhhhhh...","...hhhhhhhhhh...","...hssssssssh...","...hswksswksh...","...hssssssssh...","...hsssmmsssh...","..rrrrrrrrrrrr..","..rrrryrryrrrr..","..rrRrrrrrrRrr..","..ssrrrrrrrrss..","....RRRRRRRR....","...RRRRRRRRRR...","....sss..sss....","....sss..sss....","....kkk..kkk...."]),
+ bot:sprite([".......yy.......",".......GG.......","...gggggggggg...","...gGGGGGGGGg...","...gGccGGccGg...","...gGccGGccGg...","...gGGGGGGGGg...","...gGGccccGGg...","...gggggggggg...","....GGGGGGGG....","..ggbbbbbbbbgg..","..ggbbyybbbbgg..","..ggbbbbbbbbgg..","....GGGGGGGG....","....gg....gg....","...GGG....GGG..."]),
+ bug:sprite(["................","....k......k....",".....k....k.....","......kkkk......",".....kwkkwk.....","......kkkk......","..k.rrrkkrrr.k..","...krrkrrkrrk...","..k.rrrkkrrr.k..","...rrkrkkrkrr...","..k.rrrkkrrr.k..","....rrrkkrrr....",".....RRkkRR.....","................"]),
+ virus:sprite([".......rr.......","..r....rr....r..","...r.rrrrrr.r...","....rrrrrrrr....","...rrRrrrrRrr...",".rrrrwkrrwkrrrr.","...rrrrrrrrrr...","...rrrkkkkrrr...","...rrrkwwkrrr...","....rrrrrrrr....","...r.rrrrrr.r...","..r....rr....r..",".......rr......."]),
+ fish:sprite([".G..............",".G..............",".G..............",".G..............",".G...pppppp.....",".G.pppppppppp.rr",".GpwkppppppppPrr",".GppppPpPpPpppr.","yyppppppppppppr.",".pppppppppppp.rr","...pppppppppp...",".....pppppp....."]),
+ crystal:sprite(["...cc...","..cwcc..",".cwccCc.","cccccCCc",".cccCCc.","..cCCc..","...cc..."]),
+ chest:sprite([".NNNNNNNNNN.","NnnnnnnnnnnN","NnnnnnnnnnnN","NNNNNyyNNNNN","NnnnnyynnnnN","NnnnnnnnnnnN","NnnnnnnnnnnN",".NNNNNNNNNN."]),
+ heart:sprite([".rr.rr.","rwrrrrr","rrrrrrr",".rrrrr.","..rrr..","...r..."]),
+ heartOff:sprite([".GG.GG.","GGGGGGG","GGGGGGG",".GGGGG.","..GGG..","...G..."])
+};
+
+/* ================= TEXTURES ================= */
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function tex(fn,seed=1,size=16){const c=document.createElement("canvas");c.width=c.height=size;const x=c.getContext("2d");const r=rng(seed);for(let yy=0;yy<size;yy++)for(let xx=0;xx<size;xx++){x.fillStyle=fn(xx,yy,r);x.fillRect(xx,yy,1,1)}return c.toDataURL()}
+const pick=(a,r)=>a[Math.floor(r()*a.length)];
+const TX={
+ grass:tex((x,y,r)=>pick(["#5aa832","#4c9a2a","#6bbf3c","#4c9a2a","#3f8a22"],r),3),
+ dirt:tex((x,y,r)=>pick(["#7a5230","#6b4628","#8a5f38","#5e3d22"],r),5),
+ stone:tex((x,y,r)=>pick(["#8a8f99","#7a7f89","#9aa0aa","#6c717a","#858a94"],r),7),
+ cobble:tex((x,y,r)=>{const e=(x%8===0||y%8===0||(x+y*3)%11===0);return e?"#4a4e56":pick(["#9aa0aa","#8a8f99","#a8adb7","#7f848e"],r)},9),
+ crate:tex((x,y,r)=>{if(x===0||y===0||x===15||y===15)return"#4a2f14";if(x===y||x===15-y)return"#6b4423";return y%4===0?"#7a5530":pick(["#b8894f","#a47a43","#c4965a"],r)},11),
+ water:tex((x,y,r)=>pick(["#2f6fd6","#3b80e8","#2a5fb8","#3b80e8","#5a9bf0"],r),13),
+ voidT:tex((x,y,r)=>r()<.04?"#2a3350":pick(["#07080c","#0d0f16","#0a0c12"],r),15),
+ lava:tex((x,y,r)=>pick(["#ff5a00","#ff8c1a","#ffb43a","#e03a00","#ff8c1a"],r),17),
+ brick:tex((x,y,r)=>{const row=Math.floor(y/4),off=row%2?4:0;if(y%4===3||((x+off)%8===7))return"#2a0e12";return pick(["#5a1e24","#6e252c","#4f1a20"],r)},19),
+ obsid:tex((x,y,r)=>r()<.08?"#6a3fa8":pick(["#1a1028","#2a1840","#3b2358","#120a1e"],r),21),
+ ore:tex((x,y,r)=>r()<.09?pick(["#5ef0ff","#ffd23f"],r):pick(["#6c717a","#5c6068","#7a7f89"],r),23),
+ plank:tex((x,y,r)=>y%4===3?"#7a5530":pick(["#b8894f","#a47a43","#c4965a"],r),25)
+};
+document.body.style.setProperty("--t-dirt",`url(${TX.dirt})`);
+
+/* ============ BIOME LANDSCAPES (pixel canvas) ============ */
+function land(kind,W=200,H=110){
+  const c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");const r=rng(kind.length*97+5);
+  const px=(a,b,col)=>{x.fillStyle=col;x.fillRect(a,b,1,1)};
+  if(kind==="easy"){
+    const sky=["#5fb2ff","#6dbcff","#7ec8ff","#93d3ff","#a9ddff","#bfe6ff"];
+    sky.forEach((col,i)=>{x.fillStyle=col;x.fillRect(0,i*12,W,12)});x.fillStyle="#bfe6ff";x.fillRect(0,72,W,H);
+    x.fillStyle="#fff6a8";x.fillRect(160,10,14,14);x.fillStyle="#ffe45c";x.fillRect(162,12,10,10);
+    for(let i=0;i<W;i++){const h=Math.round(60+Math.sin(i/14)*7+Math.sin(i/5)*2);x.fillStyle="#7fb26a";x.fillRect(i,h-12,1,H)}
+    for(let i=0;i<W;i++){const top=Math.round(82+Math.sin(i/9+1)*4);for(let y=top;y<H;y++){const d=y-top;px(i,y,d===0?"#6bbf3c":d<2?pick(["#5aa832","#4c9a2a"],r):d<9?pick(["#7a5230","#6b4628","#8a5f38"],r):pick(["#7a7f89","#6c717a","#8a8f99"],r))}
+      if(i%37===11){for(let t=1;t<7;t++)px(i,top-t,"#6b4423");for(let a=-3;a<=3;a++)for(let b=-11;b<=-6;b++)if(Math.abs(a)+Math.abs(b+8)<6)px(i+a,top+b,pick(["#3f8a22","#4c9a2a","#2f6e18"],r))}}
+  }else if(kind==="mid"){
+    for(let y=0;y<H;y++)for(let i=0;i<W;i++)px(i,y,r()<.02?pick(["#5ef0ff","#ffd23f"],r):pick(["#2a2d33","#24272c","#30333a","#1f2126"],r));
+    for(let i=0;i<W;i+=1){const len=Math.max(0,Math.round(10+Math.sin(i*1.7)*6+Math.sin(i/7)*8));for(let y=0;y<len;y++)px(i,y,pick(["#3d4048","#454953","#363940"],r))}
+    for(let i=0;i<W;i++){const top=Math.round(88+Math.sin(i/11)*3);for(let y=top;y<H;y++)px(i,y,y===top?"#8a8f99":pick(["#6c717a","#5c6068","#7a7f89"],r))}
+    [[30,60],[110,52],[170,64]].forEach(([a,b])=>{px(a,b,"#ffd23f");px(a,b-1,"#ff8a1f");px(a,b+1,"#6b4423");px(a,b+2,"#6b4423")});
+  }else{
+    const sky=["#1a0508","#2a080d","#3d0c12","#561018","#741a1a","#9a2a14"];sky.forEach((col,i)=>{x.fillStyle=col;x.fillRect(0,i*13,W,13)});x.fillStyle="#9a2a14";x.fillRect(0,78,W,H);
+    for(let i=0;i<W;i++){const h=Math.round(58+Math.abs(Math.sin(i/6))*-18+Math.sin(i/17)*6);x.fillStyle="#140a1c";x.fillRect(i,h,1,H)}
+    [[40,30],[150,24]].forEach(([a,b])=>{x.fillStyle="#120a1e";x.fillRect(a,b,18,50);x.fillRect(a-3,b-4,4,6);x.fillRect(a+8,b-4,4,6);x.fillRect(a+16,b-4,4,6);x.fillStyle="#ff8c1a";x.fillRect(a+7,b+12,4,6)});
+    for(let i=0;i<W;i++){const top=Math.round(90+Math.sin(i/8)*2);for(let y=top;y<H;y++)px(i,y,pick(["#ff5a00","#ff8c1a","#ffb43a","#e03a00"],r))}
+  }
+  return c.toDataURL();
+}
+function cloudsImg(){const W=320,H=40,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");x.fillStyle="#ffffff";[[10,8,40,8],[22,4,18,6],[120,16,56,8],[134,10,24,8],[230,6,44,8],[240,2,20,6]].forEach(([a,b,w,h])=>x.fillRect(a,b,w,h));x.fillStyle="#e6f3ff";[[10,14,40,2],[120,22,56,2],[230,12,44,2]].forEach(([a,b,w,h])=>x.fillRect(a,b,w,h));return c.toDataURL()}
+const LAND={easy:land("easy"),mid:land("mid"),hard:land("hard")};
+const CLOUDS=cloudsImg();
+function dressScene(el,kind){
+  el.style.backgroundImage=`url(${LAND[kind]})`;
+  el.querySelectorAll(".clouds,.embers").forEach(n=>n.remove());
+  if(kind==="easy"){const c=document.createElement("div");c.className="clouds";c.style.backgroundImage=`url(${CLOUDS})`;el.prepend(c)}
+  else{const e=document.createElement("div");e.className="embers"+(kind==="mid"?" drip":"");for(let i=0;i<14;i++){const s=document.createElement("i");s.style.left=(Math.random()*100)+"%";if(kind==="mid"){s.style.top=(Math.random()*90)+"%";s.style.bottom="auto";s.style.animationDuration=(1.5+Math.random()*2)+"s"}else s.style.animationDuration=(4+Math.random()*5)+"s";s.style.animationDelay=(-Math.random()*6)+"s";e.appendChild(s)}el.prepend(e)}
+}
+
+/* ================= SOUND ================= */
+let AC=null,soundOn=true;
+function beep(notes){if(!soundOn)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();let t=AC.currentTime;notes.forEach(([f,d,type])=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||"square";o.frequency.value=f;g.gain.setValueAtTime(.06,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d);t+=d*.9})}catch(e){}}
+const SFX={ok:()=>beep([[523,.09],[659,.09],[784,.16]]),bad:()=>beep([[220,.14,"sawtooth"],[160,.2,"sawtooth"]]),step:()=>beep([[330,.04,"triangle"]]),mine:()=>beep([[120,.06,"sawtooth"],[90,.08,"sawtooth"]]),win:()=>beep([[523,.1],[659,.1],[784,.1],[1046,.25]]),click:()=>beep([[440,.03]])};
+
+/* ================= STORAGE ================= */
+const DEF={hero:"aibar",xp:0,cry:0,stars:{},streak:0,lastDaily:"",days:[],unlock:false};
+let S=Object.assign({},DEF);
+try{const raw=localStorage.getItem("blok-alemi");if(raw)S=Object.assign({},DEF,JSON.parse(raw))}catch(e){}
+function save(){try{localStorage.setItem("blok-alemi",JSON.stringify(S))}catch(e){}}
+
+/* ================= DATA ================= */
+const HEROES={aibar:{name:"Айбар",spr:"aibar"},aruzhan:{name:"Аружан",spr:"aruzhan"}};
+const CHARS=[
+ {id:"aibar",cls:"",name:"Айбар",role:"Кодер-бала",d:"Батыл зерттеуші. Python командаларымен блоктарды қазып, жаңа жол салады. Ешқашан берілмейді."},
+ {id:"aruzhan",cls:"",name:"Аружан",role:"Кодер-қыз",d:"Логикасы мықты. Кез келген қатені бірден байқайды, циклдерді жақсы көреді."},
+ {id:"bot",cls:"mentor",name:"Бит-Бот",role:"Ұстаз-робот",d:"Қиналғанда кеңес береді, бірақ дайын жауапты айтпайды. Экраны жанса, жаңа мүмкіндік ашылды."},
+ {id:"bug",cls:"enemy",name:"Баг",role:"Қате-қоңыз · оңай",d:"Жасыл алқаптағы ұсақ қателер. Тырнақша мен жақшаны жасырып қояды."},
+ {id:"virus",cls:"enemy",name:"Вирус",role:"Тікенді жау · орташа",d:"Тас үңгірде тығылады. Шарт пен циклді шатастырып, кодты бұзуға тырысады."},
+ {id:"fish",cls:"enemy",name:"Фишинг-Балық",role:"Қармақ бастық · күрделі",d:"Лава қамалының қожайыны. Алдауыш сілтемелер тастайды. Оны тек терең логика жеңеді."}
+];
+const BIOMES=[
+ {id:"easy",name:"Жасыл алқап",lvl:"ОҢАЙ",tagc:"#7CFF4F",d:"print, айнымалы, енгізу, амалдар. move() және mine() командалары.",floor:"grass",haz:"water",hazName:"Суға құладың",block:"crate",blockName:"жәшік",goal:"chest",goalName:"сандық",goalTo:"сандыққа",enemy:"bug",enemyName:"Баг"},
+ {id:"mid",name:"Тас үңгір",lvl:"ОРТАША",tagc:"#5EF0FF",d:"Шарт, for циклі, логикалық өрнектер. Қайталауды циклмен қысқарт.",floor:"stone",haz:"voidT",hazName:"Құрдымға құладың",block:"cobble",blockName:"тас блок",goal:"crystal",goalName:"кристалл",goalTo:"кристалға",enemy:"virus",enemyName:"Вирус"},
+ {id:"hard",name:"Лава қамалы",lvl:"КҮРДЕЛІ",tagc:"#FF8C1A",d:"while, кірістірілген цикл, функция, тізім. Шартпен өзі ойлайтын бағдарлама.",floor:"brick",haz:"lava",hazName:"Лаваға құладың",block:"obsid",blockName:"обсидиан",goal:"portal",goalName:"портал",goalTo:"порталға",enemy:"fish",enemyName:"Фишинг-Балық"}
+];
+const PAL_E=["move(1)","left()","right()","mine()"];
+const PAL_M=PAL_E.concat(["for i in range(3):\n    "]);
+const PAL_H=PAL_M.concat(["while not at_goal():\n    ","if block_ahead():\n    ","else:\n    ","path_ahead()"]);
+const LEVELS=[
+ {b:0,type:"battle",title:"Баг шабуылы",qs:[
+  {t:"mc",q:"Экранға не шығады?",code:"print(2 + 3 * 2)",o:["10","8","12"],a:1,w:"Алдымен көбейту орындалады: 3 * 2 = 6, сосын 2 + 6 = 8."},
+  {t:"mc",q:"Бос орынға қай команда керек? Пайдаланушыдан атын сұрау керек.",code:'name = ___("Атың кім? ")',o:["input","print","int"],a:0,w:"input() пайдаланушыдан мәтін сұрайды. print() тек экранға шығарады."},
+  {t:"in",q:"Нәтижені жаз:",code:"x = 3\nx = x + 4\nprint(x * 2)",ans:["14"],w:"x алдымен 3, сосын 3 + 4 = 7. Экранға 7 * 2 = 14 шығады."}]},
+ {b:0,type:"path",title:"Сандыққа жол",story:"Сандық тура алда тұр. <b>Айбарды сандыққа жеткіз.</b> move(4) — 4 блок алға жүру.",build:"move(4)",limit:1,hint:"Бір ғана команда жеткілікті: move(сан). Неше блок жүру керегін сана."},
+ {b:0,type:"battle",title:"Жоғалған тырнақша",qs:[
+  {t:"mc",q:"Экранға не шығады?",code:'print("Ай" + "дана")',o:["Айдана","Ай дана","Қате шығады"],a:0,w:"Мәтіндерді + белгісімен қосқанда, олар бос орынсыз жалғанады."},
+  {t:"bug",q:"Қай жолда қате бар? Сол жолды бас.",lines:['print("Сәлем")',"print(Сабақ)","print(2026)"],a:1,w:"Мәтін тырнақшаға алынуы керек: print(\"Сабақ\"). Сан тырнақшасыз жазылады."},
+  {t:"ord",q:"Жолдарды дұрыс ретке қой: экранға 12 шығуы керек.",lines:["a = 5","b = 7","print(a + b)"],w:"Алдымен айнымалыларға мән беріледі, тек содан кейін оларды қолдануға болады."}]},
+ {b:0,type:"path",title:"Бұрылыс",story:"Жол бұрылады. <b>right()</b> — оңға, <b>left()</b> — солға бұрылу. Бұрылыс орнында қалып бұрылады.",build:"move(2)\nright()\nmove(3)\nleft()\nmove(2)",limit:5,hint:"Бағытты бақыла: сары үшбұрыш кейіпкердің қарап тұрған жағын көрсетеді. Әр бұрылыстан кейін move() жаз."},
+ {b:0,type:"battle",title:"Бөлу құпиясы",qs:[
+  {t:"mc",q:"Экранға не шығады?",code:"print(10 // 3, 10 % 3)",o:["3 1","3.3 1","1 3"],a:0,w:"// бүтін бөлігін, % қалдықты береді: 10 = 3 × 3 + 1."},
+  {t:"in",q:"Нәтижені жаз:",code:'a = "5"\nb = "2"\nprint(a + b)',ans:["52"],w:"Тырнақшадағы сандар — мәтін. Мәтіндер қосылмайды, жалғанады: \"5\" + \"2\" = \"52\"."},
+  {t:"mc",q:"Логика: тізбекті жалғастыр.",code:"2, 4, 8, 16, ?",o:["18","24","32"],a:2,w:"Әр сан алдыңғысынан 2 есе үлкен: 16 × 2 = 32. Бағдарламада: x = x * 2."}]},
+ {b:0,type:"path",title:"Жәшікті жар",story:"Жолда <b>жәшік</b> тұр. Оның алдына келгенде <b>mine()</b> жаз: ол алдыңдағы блокты қазады.",build:"move(2)\nmine()\nmove(3)\nright()\nmove(2)",limit:5,hint:"Жәшікке дейін жүр, mine() жаз, сосын жәшіктің орнынан өтіп кете бер."},
+ {b:1,type:"battle",title:"Вирус оянды",qs:[
+  {t:"mc",q:"Экранға не шығады?",code:"for i in range(1, 4):\n    print(i * i)",o:["1 4 9","1 2 3","1 4 9 16"],a:0,w:"range(1, 4) — 1, 2, 3 (4 кірмейді). Квадраттары: 1, 4, 9."},
+  {t:"bug",q:"Қай жолда синтаксистік қате бар?",lines:["t = 30","if t > 25",'    print("Ыстық")'],a:1,w:"if жолының соңында қос нүкте ( : ) болуы міндетті: if t > 25:"},
+  {t:"mc",q:"50 және одан жоғары ұпай жинаған оқушы өтеді. Бос орынға не жазамыз?",code:'if score ___ 50:\n    print("Өтті")',o:[">=",">","=<"],a:0,w:">= «үлкен немесе тең» деген мағынада. 50 ұпай да өтуі керек, сондықтан > жарамайды. =< деген белгі Python-да жоқ."}]},
+ {b:1,type:"path",title:"Тас баспалдақ",story:"Төмен түсетін баспалдақ. Бір саты: move(1), right(), move(1), left(). <b>for циклімен</b> 5 жолдан аспай жаз — 3 жұлдыз!",build:"for i in range(4):\n    move(1)\n    right()\n    move(1)\n    left()",limit:5,hint:"for i in range(4):\n    ...\nЦикл ішіндегі жолдар 4 бос орынмен басталады."},
+ {b:1,type:"battle",title:"Шарттар үңгірі",qs:[
+  {t:"in",q:"Экранға не шығады?",code:'t = 18\nif t > 25:\n    print("A")\nelif t >= 10:\n    print("B")\nelse:\n    print("C")',ans:["B"],w:"18 > 25 жалған. Сосын 18 >= 10 ақиқат, сондықтан B шығады. else тексерілмейді."},
+  {t:"in",q:"Нәтижені жаз:",code:"s = 0\nfor i in range(5):\n    s = s + 2\nprint(s)",ans:["10"],w:"Цикл 5 рет қайталанады, әр жолы s-ке 2 қосылады: 5 × 2 = 10."},
+  {t:"ord",q:"Ретке қой: «Алға!» 3 рет, «Тоқта» 1 рет шықсын.",lines:["for i in range(3):",'    print("Алға!")','print("Тоқта")'],w:"Шегіністегі жол цикл ішінде қайталанады, ал шегініссіз жол цикл аяқталғаннан кейін бір рет орындалады."}]},
+ {b:1,type:"path",title:"Кен дәлізі",story:"Дәлізде тас блоктар бірдей қашықтықта тұр. Заңдылықты тап та, <b>циклмен</b> 4 жолда жаз.",build:"for i in range(3):\n    move(2)\n    mine()\nmove(1)",limit:4,hint:"Қайталанатын бөлік: екі блок жүр, сосын қаз. Соңында кристаллға дейін тағы бір қадам."},
+ {b:1,type:"battle",title:"Логикалық тұзақ",qs:[
+  {t:"mc",q:"Экранға не шығады?",code:'print(len("Python") > 5)',o:["True","False","6"],a:0,w:"len(\"Python\") = 6. 6 > 5 ақиқат, сондықтан True шығады."},
+  {t:"bug",q:"1-ден 4-ке дейінгі сандар шығуы керек еді, бірақ 4 шықпайды. Қай жолда қате?",lines:["n = 4","for i in range(1, n):","    print(i)"],a:1,w:"range(1, n) n-ді қамтымайды. Дұрысы: range(1, n + 1). Бұл — логикалық қате, Python ол туралы ескертпейді."},
+  {t:"mc",q:"Экранға не шығады?",code:"a = True\nb = False\nprint(a and not b)",o:["True","False","None"],a:0,w:"not b = True. True and True = True."}]},
+ {b:1,type:"path",title:"Ирек жол",story:"Жол жылан сияқты иректеледі. Бір «толқынды» тауып, оны <b>2 рет қайтала</b>. 9 жолдан аспа.",build:"for i in range(2):\n    move(2)\n    right()\n    move(2)\n    left()\n    move(2)\n    left()\n    move(2)\n    right()",limit:9,hint:"Бір толқын: оңға қарай 2, төмен 2, оңға 2, жоғары 2. Әр бұрылыстың бағытын мұқият тексер."},
+ {b:2,type:"battle",title:"Лава күзетшісі",qs:[
+  {t:"in",q:"Экранға не шығады?",code:"n = 1\nwhile n < 20:\n    n = n * 2\nprint(n)",ans:["32"],w:"n: 1 → 2 → 4 → 8 → 16 → 32. 32 < 20 жалған болғанда цикл тоқтайды."},
+  {t:"in",q:"Нәтижені жаз:",code:"def f(x):\n    return x * x + 1\n\nprint(f(f(1)))",ans:["5"],w:"Іштегісінен баста: f(1) = 1 + 1 = 2. Сосын f(2) = 4 + 1 = 5."},
+  {t:"bug",q:"1-ден 10-ға дейінгі сандардың қосындысы 55 болуы керек, бірақ 45 шығады. Қате қай жолда?",lines:["total = 0","for i in range(1, 10):","    total += i","print(total)"],a:1,w:"range(1, 10) 10-ды қамтымайды. range(1, 11) керек."}]},
+ {b:2,type:"path",title:"Кездейсоқ обсидиан",story:"Обсидиан блоктары ретсіз тұр. <b>while</b> мен <b>if</b> қолданып, кез келген дәлізден өтетін 4 жолдық бағдарлама жаз.",build:"move(1)\nmine()\nmove(3)\nmine()\nmove(2)\nmine()\nmove(1)\nmine()\nmove(2)",ref:"while not at_goal():\n    if block_ahead():\n        mine()\n    move()",limit:4,pal:PAL_H,hint:"Порталға жеткенше қайтала: алда блок болса — қаз; сосын бір қадам жүр."},
+ {b:2,type:"battle",title:"Тізімдер мұнарасы",qs:[
+  {t:"mc",q:"Экранға не шығады?",code:"nums = [3, 8, 1, 6]\nprint(max(nums) - min(nums))",o:["7","5","2"],a:0,w:"Ең үлкені 8, ең кішісі 1. Айырмасы: 8 − 1 = 7."},
+  {t:"in",q:"Нәтижені жаз:",code:'word = "қала"\nprint(word[0] + word[-1])',ans:["қа"],w:"word[0] — бірінші әріп «қ», word[-1] — соңғы әріп «а». Жалғағанда: «қа»."},
+  {t:"ord",q:"Құпиясөз тексергішті ретке қой.",lines:["pw = input()","if len(pw) >= 8:",'    print("Мықты")',"else:",'    print("Әлсіз")'],w:"Алдымен енгізу, сосын шарт. else шартпен бір деңгейде тұрады, ал print жолдары шегініспен жазылады."}]},
+ {b:2,type:"path",title:"Обсидиан баспалдағы",story:"Әр сатыда 2 обсидиан бар. <b>Кірістірілген цикл</b> (цикл ішіндегі цикл) қолданып, 7 жолда жаз.",build:"for i in range(3):\n    for j in range(2):\n        mine()\n        move(1)\n    right()\n    move(2)\n    left()",limit:7,hint:"Ішкі цикл: mine() және move(1) екі рет. Сыртқы цикл: ішкі циклден кейін төмен түсу."},
+ {b:2,type:"path",title:"Спираль лабиринт",story:"Соңғы лабиринт. <b>path_ahead()</b> — алда жол бар ма? Жол болса — жүр, болмаса — оңға бұрыл. Порталға жеткенше қайтала.",build:"move(4)\nright()\nmove(3)\nright()\nmove(3)\nright()\nmove(1)\nright()\nmove(1)",ref:"while not at_goal():\n    if path_ahead():\n        move()\n    else:\n        right()",limit:5,hint:"while not at_goal():\n    if path_ahead():\n        ...\n    else:\n        ..."},
+ {b:2,type:"battle",boss:true,title:"Фишинг-Балықпен соңғы шайқас",qs:[
+  {t:"mc",q:"Экранға не шығады?",code:"count = 0\nfor i in range(10):\n    if i % 2 == 0:\n        count += 1\nprint(count)",o:["5","4","10"],a:0,w:"0-ден 9-ға дейінгі жұп сандар: 0, 2, 4, 6, 8. Барлығы 5."},
+  {t:"in",q:"Нәтижені жаз:",code:"x = 10\nwhile x > 0:\n    x = x - 3\nprint(x)",ans:["-2"],w:"x: 10 → 7 → 4 → 1 → −2. −2 > 0 жалған, цикл тоқтайды."},
+  {t:"mc",q:"Балық «құпиясөзіңді жаңарт» деген хат жіберді. Қай құпиясөз ең мықты?",code:"# ойдан шығарылған үлгілер",o:["qwerty123","Aidana2010","k7#Lp!q2Vz9@"],a:2,w:"Мықты құпиясөз ұзын, ішінде бас әріп, кіші әріп, сан және арнайы таңба бар. Ішінде есім мен туған жыл болмауы керек."},
+  {t:"bug",q:"Қай жолда NameError шығады?",lines:["def area(a, b):","    return a * b","print(Area(3, 4))"],a:2,w:"Функция area деп аталған. Python үшін Area мен area екі түрлі атау."},
+  {t:"in",q:"Соңғы соққы! Нәтижені жаз:",code:'s = "кодқоржын"\nprint(s.upper()[:3])',ans:["КОД"],w:"upper() барлық әріпті бас әріпке айналдырады, [:3] алғашқы 3 таңбаны алады: КОД."}]}
+];
+const EXTRA=[
+ {d:0,t:"mc",q:"Логика: тізбекті жалғастыр.",code:"1, 1, 2, 3, 5, 8, ?",o:["11","13","16"],a:1,w:"Әр сан алдыңғы екеуінің қосындысы: 5 + 8 = 13 (Фибоначчи тізбегі)."},
+ {d:0,t:"in",q:"Экранға не шығады?",code:"print(2 ** 5)",ans:["32"],w:"** — дәрежеге шығару: 2 × 2 × 2 × 2 × 2 = 32."},
+ {d:0,t:"mc",q:"Экранға не шығады?",code:"print(17 % 5)",o:["2","3","3.4"],a:0,w:"17 = 5 × 3 + 2. Қалдық — 2."},
+ {d:0,t:"mc",q:"Робот 3 рет move(2), сосын бір рет right() орындады. Ол неше блок жүрді?",code:"for i in range(3):\n    move(2)\nright()",o:["6","5","7"],a:0,w:"Бұрылыс орнында жасалады, қадам санына кірмейді: 3 × 2 = 6."},
+ {d:1,t:"in",q:"Экранға не шығады?",code:"a, b = 3, 7\na, b = b, a\nprint(a)",ans:["7"],w:"Екінші жол мәндерді алмастырады: енді a = 7, b = 3."},
+ {d:1,t:"mc",q:"Логика: «Барлық бағдарламашылар тест жазады. Ерлан — бағдарламашы». Онда…",code:"# логикалық қорытынды",o:["Ерлан тест жазады","Тест жазатындардың бәрі — бағдарламашы","Ештеңе айтуға болмайды"],a:0,w:"Жалпы ереже Ерланға да қатысты. Бірақ кері тұжырым әрқашан дұрыс бола бермейді."},
+ {d:1,t:"in",q:"Неше рет «*» шығады?",code:'for i in range(3):\n    for j in range(4):\n        print("*")',ans:["12"],w:"Сыртқы цикл 3 рет, әр жолы ішкі цикл 4 рет қайталанады: 3 × 4 = 12."},
+ {d:2,t:"in",q:"Экранға не шығады?",code:"nums = [4, 7, 2, 9]\nt = 0\nfor n in nums:\n    if n > 5:\n        t += n\nprint(t)",ans:["16"],w:"5-тен үлкендері — 7 және 9. Олардың қосындысы 16."},
+ {d:2,t:"mc",q:"Логика: 3 есік бар, тек біреуінде сандық. 1-есікте «Сандық осында», 2-есікте «Сандық 1-де емес», 3-есікте «Сандық 2-де емес» деп жазылған. Тек бір жазу шын. Сандық қай есікте?",code:"# тек бір жазу шын",o:["1-есік","2-есік","3-есік"],a:1,w:"Әр нұсқаны тексер. Сандық 1-есікте болса, 1 мен 3-жазу шын болады — екеуі. 3-есікте болса, 2 мен 3-жазу шын — тағы екеуі. 2-есікте болса, тек «Сандық 1-де емес» шын. Жауап — 2-есік."}
+];
+
+/* ================= HUD ================= */
+const RANKS=[[0,"Жаңа бастаушы"],[150,"Кіші кодер"],[400,"Кодер"],[800,"Шебер кодер"],[1300,"Код батыры"]];
+function rankOf(xp){let i=0;RANKS.forEach((r,k)=>{if(xp>=r[0])i=k});return i}
+function hud(){
+  const h=HEROES[S.hero]||HEROES.aibar;$("#hudAva").src=SPR[h.spr];$("#hudAva").alt=h.name;
+  const ri=rankOf(S.xp),cur=RANKS[ri][0],nx=RANKS[ri+1]?RANKS[ri+1][0]:cur+500;
+  $("#hudRank").textContent=h.name+" · "+RANKS[ri][1];$("#hudXp").textContent=S.xp+" XP";
+  $("#hudBar").style.width=Math.min(100,(S.xp-cur)/(nx-cur)*100)+"%";
+  $("#hudCryN").textContent=S.cry;$("#hudStreak").textContent=S.streak;
+}
+$("#hudCry").src=SPR.crystal;
+function addXP(n){const before=rankOf(S.xp);S.xp+=n;save();hud();if(rankOf(S.xp)>before)setTimeout(()=>{if($("#modal").hidden)toastRank();else $("#modalBox").insertAdjacentHTML("beforeend",`<p style="margin-top:12px;color:var(--gold);font-weight:800">🎖 Жаңа атақ: ${RANKS[rankOf(S.xp)][1]}!</p>`)},450)}
+function toastRank(){const r=RANKS[rankOf(S.xp)][1];openModal(`<img class="px big" src="${SPR.bot}" alt=""><h2>Жаңа атақ!</h2><p style="margin-top:8px">Құттықтаймын! Енді сен — <b style="color:var(--gold)">${r}</b>.</p><div class="mbtns"><button class="pbtn" type="button" data-close>Тамаша!</button></div>`)}
+
+/* ================= NAV ================= */
+let screen="home";
+function go(name,arg){
+  SFX.click();screen=name;
+  $$(".screen").forEach(s=>s.hidden=true);$("#scr-"+name).hidden=false;
+  if(name==="map")drawMap();
+  if(name==="daily")drawDaily();
+  if(name==="level")startLevel(arg);
+  scrollTo({top:0,behavior:REDUCE?"auto":"smooth"});
+}
+document.addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(g){go(g.dataset.go)}const c=e.target.closest("[data-close]");if(c)closeModal()});
+$("#sndBtn").onclick=()=>{soundOn=!soundOn;$("#sndBtn").textContent=soundOn?"🔊":"🔇"};
+
+/* ================= HOME ================= */
+dressScene($("#homeScene"),"easy");
+$("#walk1").src=SPR.aibar;$("#walk2").src=SPR.aruzhan;
+function drawChars(){
+  $("#chars").innerHTML=CHARS.map(c=>{const hero=HEROES[c.id];return `<article class="panel char ${c.cls} ${S.hero===c.id?"chosen":""}"><div class="stage"><img class="px" src="${SPR[c.id]}" alt="${c.name}"></div><div><h3>${c.name}</h3><span class="role">${c.role}</span><p>${c.d}</p>${hero?`<div class="pick"><button class="pbtn sm ${S.hero===c.id?"gold":"blue"}" type="button" data-hero="${c.id}">${S.hero===c.id?"✓ Сен осы кейіпкерсің":"Осы кейіпкерді таңда"}</button></div>`:""}</div></article>`}).join("");
+  $$("[data-hero]").forEach(b=>b.onclick=()=>{S.hero=b.dataset.hero;save();hud();drawChars();SFX.ok()});
+}
+drawChars();
+$("#biomeCards").innerHTML=BIOMES.map((b,i)=>`<button class="scene biome-card" type="button" data-bi="${i}" style="background-image:url(${LAND[b.id]})"><span class="tag" style="background:${b.tagc}">${b.lvl}</span><h3>${i+1}. ${b.name}</h3><p>${b.d}</p></button>`).join("");
+$$("[data-bi]").forEach(b=>b.onclick=()=>{go("map");setTimeout(()=>{const t=$("#mb"+b.dataset.bi);if(t)t.scrollIntoView({behavior:REDUCE?"auto":"smooth"})},60)});
+
+/* ================= MAP ================= */
+function unlocked(i){return S.unlock||i===0||(S.stars[i-1]>0)}
+function drawMap(){
+  const firstOpen=LEVELS.findIndex((l,i)=>unlocked(i)&&!S.stars[i]);
+  $("#mapBiomes").innerHTML=BIOMES.map((b,bi)=>{
+    const idx=LEVELS.map((l,i)=>i).filter(i=>LEVELS[i].b===bi);
+    const got=idx.reduce((a,i)=>a+(S.stars[i]||0),0);
+    return `<div class="scene map-biome" id="mb${bi}" data-scene="${b.id}"><div class="map-head"><div><span class="tag" style="background:${b.tagc}">${bi+1}-ӘЛЕМ · ${b.lvl}</span><h2>${b.name}</h2></div><span class="prog">★ ${got} / ${idx.length*3}</span></div>
+      <div class="levels">${idx.map((i,k)=>{const L=LEVELS[i],lock=!unlocked(i),st=S.stars[i]||0;const tile=L.type==="battle"?(L.boss?TX.obsid:TX[b.block]):TX[b.floor];
+        return `<button class="lv ${lock?"locked":""} ${i===firstOpen?"next":""}" type="button" data-lv="${i}" style="background-image:url(${tile})" aria-label="${bi+1}-${k+1} деңгей: ${L.title}${lock?", құлыпталған":""}"><span class="ty emo">${lock?"🔒":L.boss?"👑":L.type==="battle"?"⚔️":"🧭"}</span><span class="n">${bi+1}-${k+1}</span><span class="stars">${"★".repeat(st)}${"☆".repeat(3-st)}</span></button>`}).join("")}</div></div>`}).join("");
+  $$("[data-scene]").forEach(el=>dressScene(el,el.dataset.scene));
+  $$("[data-lv]").forEach(b=>b.onclick=()=>{const i=+b.dataset.lv;if(!unlocked(i)){SFX.bad();b.classList.add("shake");setTimeout(()=>b.classList.remove("shake"),400);return}go("level",i)});
+  $("#unlockAll").textContent=S.unlock?"🔒 Құлыптарды қайтару":"🔓 Барлық деңгейді ашу (мұғалімге)";
+}
+$("#unlockAll").onclick=()=>{S.unlock=!S.unlock;save();drawMap()};
+$("#resetAsk").onclick=()=>$("#resetConfirm").classList.add("on");
+$("#resetNo").onclick=()=>$("#resetConfirm").classList.remove("on");
+$("#resetYes").onclick=()=>{const hero=S.hero;S=Object.assign({},DEF,{hero,stars:{},days:[]});save();hud();$("#resetConfirm").classList.remove("on");drawMap()};
+
+/* ================= MODAL ================= */
+function openModal(html){$("#modalBox").innerHTML=html;$("#modal").hidden=false;const b=$("#modalBox button");if(b)b.focus()}
+function closeModal(){$("#modal").hidden=true}
+
+/* ================= CODE HIGHLIGHT ================= */
+function hl(code){return esc(code).replace(/(#.*)$/gm,'<span class="c">$1</span>').replace(/(&quot;[^&\n]*?&quot;)/g,'<span class="s">$1</span>').replace(/\b(print|input|if|elif|else|for|in|range|def|return|while|and|not|or|len|max|min|int|True|False)\b/g,'<span class="k">$1</span>').replace(/(^|[^\w#])(\d+)/g,'$1<span class="n">$2</span>')}
+
+/* ================= BATTLE ================= */
+let B=null;
+function startLevel(i){
+  const L=LEVELS[i],bio=BIOMES[L.b],k=LEVELS.filter((l,j)=>l.b===L.b&&j<i).length;
+  $("#lvCrumb").textContent=`${L.b+1}-ӘЛЕМ · ${bio.name.toUpperCase()} · ${L.b+1}-${k+1}`;$("#lvTitle").textContent=L.title;
+  $("#lvBack").onclick=()=>go("map");
+  const sc=$("#lvScene");sc.className="scene";sc.innerHTML="";
+  if(L.type==="battle")battle({qs:L.qs.slice(),bio,boss:L.boss,onWin:st=>finishLevel(i,st),onLose:()=>startLevel(i)});
+  else pathLevel(i);
+  dressScene(sc,bio.id);
+}
+function battle(cfg){
+  const sc=$("#lvScene");sc.classList.add("arena");
+  const hero=HEROES[S.hero]||HEROES.aibar;
+  const hp=cfg.qs.length;
+  B={...cfg,queue:cfg.qs.map((q,i)=>i),hearts:3,hp,maxHp:hp,done:0,lock:false};
+  sc.insertAdjacentHTML("beforeend",`<div class="bot-tip"><img class="px" src="${SPR.bot}" alt="Бит-Бот"><div class="bubble">${cfg.boss?"Бұл — басты жау! 5 соққы керек. Асықпа, әр жолды оқы.":"Әр дұрыс жауап — жауға бір соққы. Мұқият бол!"}</div></div>
+   <div class="fighter me" id="fMe"><div class="hearts" id="hearts"></div><img class="px" src="${SPR[hero.spr]}" alt="${hero.name}"><span class="name">${hero.name}</span></div>
+   <div class="fighter foe" id="fFoe"><div class="hpbar" id="hpbar"></div><img class="px" src="${SPR[cfg.bio.enemy]}" alt="${cfg.bio.enemyName}" style="${cfg.boss?"width:min(170px,28vw)":""}"><span class="name">${cfg.bio.enemyName}</span></div>`);
+  drawBars();drawQ();
+}
+function drawBars(){
+  $("#hearts").innerHTML=[0,1,2].map(i=>`<img class="px" src="${i<B.hearts?SPR.heart:SPR.heartOff}" alt="">`).join("");
+  $("#hpbar").innerHTML=Array.from({length:B.maxHp},(_,i)=>`<i class="${i<B.hp?"":"off"}"></i>`).join("");
+}
+function drawQ(){
+  const qi=B.queue[0],q=B.qs[qi],P=$("#lvPanel");B.lock=false;
+  const dots=Array.from({length:B.maxHp},(_,i)=>`<i class="${i<B.done?"ok":i===B.done?"cur":""}"></i>`).join("");
+  let body="";
+  if(q.t==="mc")body=`<pre class="code">${hl(q.code)}</pre><div class="opts">${q.o.map((o,i)=>`<button class="opt" type="button" data-o="${i}">${esc(o)}</button>`).join("")}</div>`;
+  if(q.t==="in")body=`<pre class="code">${hl(q.code)}</pre><div class="in-row"><input id="ansIn" autocomplete="off" spellcheck="false" placeholder="Жауабыңды жаз" aria-label="Жауап"><button class="pbtn" type="button" id="ansGo">Тексеру</button></div>`;
+  if(q.t==="bug")body=`<div class="blines">${q.lines.map((l,i)=>`<button class="bline" type="button" data-l="${i}"><span class="ln">${i+1}</span>${hl(l)}</button>`).join("")}</div>`;
+  if(q.t==="ord"){const sh=q.lines.map((l,i)=>i);do{sh.sort(()=>Math.random()-.5)}while(sh.every((v,i)=>v===i)&&sh.length>1);
+    body=`<div class="ord-out" id="ordOut"></div><div class="ord-in" id="ordIn">${sh.map(i=>`<button class="ochip" type="button" data-c="${i}">${esc(q.lines[i])}</button>`).join("")}</div><div class="in-row"><button class="pbtn" type="button" id="ordGo" disabled>Тексеру</button><button class="pbtn stone sm" type="button" id="ordClr">Тазалау</button></div>`}
+  P.innerHTML=`<div class="qcard"><div class="qhead"><span class="qdots">${dots}</span><span style="font:700 13px/1 var(--f-mono);color:var(--muted)">${({mc:"Таңда",in:"Жауап жаз",bug:"Қатені тап",ord:"Ретке қой"})[q.t]}</span></div><div class="qtxt">${esc(q.q)}</div>${body}<div class="fb" id="fb" aria-live="polite"></div><div id="nextRow"></div></div>`;
+  if(q.t==="mc")$$("[data-o]").forEach(b=>b.onclick=()=>{if(B.lock)return;const ok=+b.dataset.o===q.a;b.classList.add(ok?"ok":"bad");if(!ok)$(`[data-o="${q.a}"]`).classList.add("ok");answer(ok,q)});
+  if(q.t==="in"){const inp=$("#ansIn");inp.focus({preventScroll:true});const chk=()=>{if(B.lock||!inp.value.trim())return;const norm=s=>s.trim().replace(/^["']|["']$/g,"").replace(/\s+/g," ");const ok=q.ans.some(a=>norm(a)===norm(inp.value));answer(ok,q,q.ans[0])};$("#ansGo").onclick=chk;inp.onkeydown=e=>{if(e.key==="Enter")chk()}}
+  if(q.t==="bug")$$("[data-l]").forEach(b=>b.onclick=()=>{if(B.lock)return;const ok=+b.dataset.l===q.a;b.classList.add(ok?"ok":"bad");if(!ok)$(`[data-l="${q.a}"]`).classList.add("ok");answer(ok,q)});
+  if(q.t==="ord"){const out=$("#ordOut"),inn=$("#ordIn");const upd=()=>{$("#ordGo").disabled=out.children.length!==q.lines.length};
+    P.querySelector(".qcard").addEventListener("click",e=>{const c=e.target.closest(".ochip");if(!c||B.lock)return;(c.parentElement===inn?out:inn).appendChild(c);SFX.click();upd()});
+    $("#ordClr").onclick=()=>{[...out.children].forEach(c=>inn.appendChild(c));upd()};
+    $("#ordGo").onclick=()=>{if(B.lock)return;const order=[...out.children].map(c=>+c.dataset.c);const ok=order.every((v,i)=>q.lines[v]===q.lines[i]);answer(ok,q,q.lines.join("\n"))}}
+}
+async function answer(ok,q,right){
+  B.lock=true;const fb=$("#fb");
+  fb.className="fb on "+(ok?"ok":"bad");
+  fb.innerHTML=`<b>${ok?"Дұрыс! Соққы!":"Қате. Жау шабуыл жасады!"}</b>${right&&!ok?`Дұрыс жауап: <code style="white-space:pre">${esc(right)}</code><br>`:""}${esc(q.w)}`;
+  const sc=$("#lvScene");
+  if(ok){
+    SFX.ok();addXP(10);B.hp--;B.done++;B.queue.shift();
+    if(!REDUCE){$("#fMe").classList.add("atk");sc.insertAdjacentHTML("beforeend",'<span class="bolt">&lt;/&gt;</span>');await sleep(450);sc.querySelector(".bolt")?.remove();$("#fMe").classList.remove("atk");$("#fFoe").classList.add("hit");dmg("−1","#fFoe");await sleep(450);$("#fFoe").classList.remove("hit")}
+    drawBars();
+    if(B.hp<=0){$("#fFoe").classList.add("dead");burst($("#fFoe"),["#e3263c","#ffd23f","#ffffff","#5ef0ff"]);await sleep(800);B.onWin(B.hearts);return}
+  }else{
+    SFX.bad();B.hearts--;B.queue.push(B.queue.shift());
+    if(!REDUCE){$("#fFoe").classList.add("atk");sc.insertAdjacentHTML("beforeend",'<span class="bolt back">✖</span>');await sleep(450);sc.querySelector(".bolt")?.remove();$("#fFoe").classList.remove("atk");$("#fMe").classList.add("hit");sc.classList.add("shake");dmg("−❤","#fMe");await sleep(450);$("#fMe").classList.remove("hit");sc.classList.remove("shake")}
+    drawBars();
+    if(B.hearts<=0){await sleep(300);openModal(`<img class="px big" src="${SPR[B.bio.enemy]}" alt=""><h2>Жүректер бітті</h2><p style="margin-top:8px">Ештеңе етпейді, қате — ең жақсы ұстаз! Түсіндірмелерді есіңе сақта да, қайта көр.</p><div class="mbtns"><button class="pbtn" type="button" id="mRetry">↻ Қайта бастау</button><button class="pbtn stone" type="button" data-close data-go="map">Карта</button></div>`);$("#mRetry").onclick=()=>{closeModal();B.onLose()};return}
+  }
+  $("#nextRow").innerHTML=`<button class="pbtn blue" type="button" id="nextQ">${ok?"Келесі сұрақ →":"Түсіндім, жалғастыру →"}</button>`;
+  $("#nextQ").onclick=drawQ;$("#nextQ").focus({preventScroll:true});
+}
+function dmg(t,sel){const el=$(sel),sc=$("#lvScene");const r=el.getBoundingClientRect(),s=sc.getBoundingClientRect();const d=document.createElement("span");d.className="dmg";d.textContent=t;d.style.left=(r.left-s.left+r.width/2-16)+"px";d.style.top=(r.top-s.top)+"px";sc.appendChild(d);setTimeout(()=>d.remove(),900)}
+function burst(el,cols,host){host=host||$("#lvScene");const r=el.getBoundingClientRect(),s=host.getBoundingClientRect();for(let i=0;i<16;i++){const p=document.createElement("i");p.className="particle";p.style.background=cols[i%cols.length];p.style.left=(r.left-s.left+r.width/2)+"px";p.style.top=(r.top-s.top+r.height/2)+"px";const a=Math.random()*Math.PI*2,d=40+Math.random()*70;p.style.setProperty("--dx",Math.cos(a)*d+"px");p.style.setProperty("--dy",Math.sin(a)*d+"px");host.appendChild(p);setTimeout(()=>p.remove(),800)}}
+
+function finishLevel(i,stars){
+  const prev=S.stars[i]||0;const gain=Math.max(0,stars-prev);
+  S.stars[i]=Math.max(prev,stars);S.cry+=gain;save();addXP(stars*10);SFX.win();
+  const L=LEVELS[i],next=i+1<LEVELS.length?i+1:null,bio=BIOMES[L.b];
+  const last=L.b!==(LEVELS[next]?.b??-1);
+  openModal(`<img class="px big" src="${SPR[L.type==="battle"?(HEROES[S.hero]||HEROES.aibar).spr:(bio.goal==="chest"?"chest":"crystal")]}" alt=""><h2>${L.boss?"Қамал азат етілді!":L.type==="battle"?"Жау жеңілді!":"Мақсатқа жеттің!"}</h2>
+   <div class="mstars">${[0,1,2].map(k=>`<span class="${k<stars?"on":""}" style="animation-delay:${k*.2}s">★</span>`).join("")}</div>
+   <div class="rew"><span>+${stars*10} XP</span><span><img class="px" src="${SPR.crystal}" alt="Кристалл">+${gain}</span></div>
+   <p>${L.boss?"Сен үш әлемнің бәрін өттің! Енді күнделікті жаттығумен шеберлігіңді шыңда.":last&&next!==null?`«${bio.name}» әлемі аяқталды! Келесі әлем ашылды: «${BIOMES[L.b+1].name}».`:stars===3?"Мінсіз орындадың!":"Жақсы! 3 жұлдыз үшін қайта өтіп көр."}</p>
+   <div class="mbtns">${next!==null?`<button class="pbtn" type="button" id="mNext">Келесі деңгей →</button>`:`<button class="pbtn gold" type="button" data-close data-go="daily">📅 Күнделікті жаттығу</button>`}<button class="pbtn stone" type="button" id="mAgain">↻ Қайталау</button><button class="pbtn stone" type="button" data-close data-go="map">Карта</button></div>`);
+  if(next!==null)$("#mNext").onclick=()=>{closeModal();go("level",next)};
+  $("#mAgain").onclick=()=>{closeModal();startLevel(i)};
+}
+
+/* ================= ROBOT INTERPRETER ================= */
+const DIRS=[[1,0],[0,1],[-1,0],[0,-1]];
+const KNOWN=["move","left","right","mine"],CONDS=["block_ahead","at_goal","path_ahead"];
+function parse(code){
+  const raw=code.replace(/\t/g,"    ").split("\n");const lines=[];
+  raw.forEach((t,i)=>{const s=t.replace(/#.*$/,"").replace(/\s+$/,"");if(s.trim())lines.push({ind:s.length-s.trimStart().length,txt:s.trim(),ln:i+1})});
+  if(!lines.length)return{err:{ln:1,msg:"Код бос. Командалар жаз немесе төмендегі батырмаларды бас."}};
+  if(lines[0].ind>0)return{err:{ln:lines[0].ln,msg:"Бірінші жол шегініссіз басталуы керек."}};
+  let pos=0;
+  function cond(s,ln){const m=s.match(/^(not\s+)?([A-Za-z_]+)\(\s*\)$/);if(!m||!CONDS.includes(m[2]))throw{ln,msg:`«${s}» шартын түсінбедім. Қолдануға болатын шарттар: block_ahead(), at_goal(), path_ahead(). Алдына not қоюға болады.`};return{not:!!m[1],f:m[2]}}
+  function block(ind){
+    const out=[];
+    while(pos<lines.length){
+      const L=lines[pos];if(L.ind<ind)break;
+      if(L.ind>ind)throw{ln:L.ln,msg:"Артық шегініс. Бұл жол алдыңғы жолмен бір деңгейде болуы керек."};
+      const t=L.txt;pos++;
+      const head=t.match(/^(for|while|if|elif|else)\b/);
+      if(head&&!t.endsWith(":"))throw{ln:L.ln,msg:`${head[1]} жолының соңында қос нүкте ( : ) жетіспейді.`};
+      const body=()=>{if(pos>=lines.length||lines[pos].ind<=ind)throw{ln:L.ln,msg:"Қос нүктеден кейін 4 бос орын шегініспен жазылған кемінде бір жол болуы керек."};return block(lines[pos].ind)};
+      let m;
+      if((m=t.match(/^for\s+[A-Za-z_]\w*\s+in\s+range\(\s*(\d+)\s*(?:,\s*(\d+)\s*)?\)\s*:$/))){const n=m[2]!==undefined?(+m[2]-+m[1]):+m[1];out.push({k:"for",n:Math.max(0,n),body:body(),ln:L.ln});continue}
+      if(t.startsWith("for"))throw{ln:L.ln,msg:"for жолын былай жаз: for i in range(3):"};
+      if((m=t.match(/^while\s+(.+):$/))){out.push({k:"while",c:cond(m[1].trim(),L.ln),body:body(),ln:L.ln});continue}
+      if((m=t.match(/^if\s+(.+):$/))){const node={k:"if",c:cond(m[1].trim(),L.ln),body:body(),els:[],ln:L.ln};if(pos<lines.length&&lines[pos].ind===ind&&/^else\s*:$/.test(lines[pos].txt)){const E=lines[pos];pos++;if(pos>=lines.length||lines[pos].ind<=ind)throw{ln:E.ln,msg:"else: жолынан кейін шегініспен жазылған команда керек."};node.els=block(lines[pos].ind)}out.push(node);continue}
+      if(/^else/.test(t))throw{ln:L.ln,msg:"else тек if блогынан кейін, сол if-пен бір деңгейде тұрады."};
+      if(/^elif/.test(t))throw{ln:L.ln,msg:"Бұл ойында elif орнына if/else қолдан."};
+      if((m=t.match(/^([A-Za-z_]\w*)\s*\(\s*(\d*)\s*\)$/))){
+        const f=m[1];
+        if(!KNOWN.includes(f)){if(KNOWN.includes(f.toLowerCase()))throw{ln:L.ln,msg:`Python бас әріпті ажыратады: «${f}» емес, «${f.toLowerCase()}» деп жаз.`};if(CONDS.includes(f))throw{ln:L.ln,msg:`${f}() — шарт. Оны if немесе while ішінде қолдан.`};throw{ln:L.ln,msg:`«${f}» деген команда жоқ. Қолдануға болатындар: move(), left(), right(), mine().`}}
+        if(m[2]&&f!=="move")throw{ln:L.ln,msg:`${f}() командасы жақша ішіне сан қабылдамайды.`};
+        const n=f==="move"?(m[2]===""?1:+m[2]):0;if(f==="move"&&n>20)throw{ln:L.ln,msg:"Бір рет 20 блоктан артық жүруге болмайды."};
+        out.push({k:f,n,ln:L.ln});continue}
+      if(/^[A-Za-z_]\w*$/.test(t)&&KNOWN.includes(t))throw{ln:L.ln,msg:`Команданы орындау үшін жақша керек: ${t}()`};
+      if(/\(/.test(t)&&!/\)$/.test(t))throw{ln:L.ln,msg:"Жақша жабылмаған: ) жетіспейді."};
+      throw{ln:L.ln,msg:"Бұл жолды түсінбедім. Команданы батырмалардан таңдап көр."};
+    }
+    return out;
+  }
+  try{const prog=block(0);return{prog,count:lines.length}}catch(e){if(e&&e.msg)return{err:e};throw e}
+}
+function run(prog,world,builder){
+  const st={x:0,y:0,d:0,blocks:new Set(world?world.blocks:[]),path:new Set(),mined:new Set()};st.path.add("0,0");
+  const ev=[];let ops=0;const LIMIT=builder?2000:400;
+  const key=(x,y)=>x+","+y;const ahead=()=>[st.x+DIRS[st.d][0],st.y+DIRS[st.d][1]];
+  const atGoal=()=>world&&st.x===world.gx&&st.y===world.gy;
+  function C(c){const[a,b]=ahead(),k=key(a,b);let v=c.f==="block_ahead"?st.blocks.has(k):c.f==="at_goal"?atGoal():world.path.has(k);return c.not?!v:v}
+  function exec(list){for(const s of list){if(++ops>LIMIT)throw{ln:s.ln,msg:"Цикл тоқтамады! Шарт бір кезде жалған болатынын тексер.",fail:true};
+    if(s.k==="for"){for(let i=0;i<s.n;i++)exec(s.body)}
+    else if(s.k==="while"){while(C(s.c)){exec(s.body);if(++ops>LIMIT)throw{ln:s.ln,msg:"Цикл тоқтамады! Шарт бір кезде жалған болатынын тексер.",fail:true}}}
+    else if(s.k==="if"){exec(C(s.c)?s.body:s.els)}
+    else if(s.k==="left"||s.k==="right"){st.d=(st.d+(s.k==="right"?1:3))%4;ev.push({t:"turn",d:st.d,ln:s.ln})}
+    else if(s.k==="mine"){const[a,b]=ahead(),k=key(a,b);if(builder){st.blocks.add(k);st.path.add(k)}else if(st.blocks.has(k)){st.blocks.delete(k);ev.push({t:"mine",k,ln:s.ln})}else ev.push({t:"note",msg:"Алда қазатын блок жоқ.",ln:s.ln})}
+    else if(s.k==="move"){for(let i=0;i<s.n;i++){const[a,b]=ahead(),k=key(a,b);
+      if(!builder){if(st.blocks.has(k)){ev.push({t:"bump",ln:s.ln});throw{ln:s.ln,msg:"Алда блок тұр! Алдымен mine() командасымен қаз.",fail:true}}
+        if(!world.path.has(k)){st.x=a;st.y=b;ev.push({t:"fall",x:a,y:b,ln:s.ln});throw{ln:s.ln,msg:"haz",fail:true}}}
+      st.x=a;st.y=b;st.path.add(k);ev.push({t:"move",x:a,y:b,ln:s.ln})}}
+  }}
+  try{exec(prog);return{ev,st,ok:true}}catch(e){return{ev,st,ok:false,err:e}}
+}
+function buildWorld(code){
+  const p=parse(code);const r=run(p.prog,null,true);
+  const pts=[...r.st.path].map(s=>s.split(",").map(Number));
+  const minx=Math.min(...pts.map(p=>p[0]))-1,miny=Math.min(...pts.map(p=>p[1]))-1,maxx=Math.max(...pts.map(p=>p[0]))+1,maxy=Math.max(...pts.map(p=>p[1]))+1;
+  return{path:r.st.path,blocks:[...r.st.blocks],gx:r.st.x,gy:r.st.y,minx,miny,w:maxx-minx+1,h:maxy-miny+1};
+}
+
+/* ================= PATH LEVEL ================= */
+let PV=null;
+function pathLevel(i){
+  const L=LEVELS[i],bio=BIOMES[L.b];const W=buildWorld(L.build);
+  const sc=$("#lvScene");
+  PV={i,L,bio,W,runs:0,busy:false};
+  sc.innerHTML=`<div class="board-wrap"><div class="board-legend"><span><i style="background-image:url(${TX[bio.floor]})"></i>жол</span><span><i style="background-image:url(${TX[bio.block]})"></i>${bio.blockName}</span><span><i style="background-image:url(${TX[bio.haz]})"></i>${bio.haz==="water"?"су":bio.haz==="lava"?"лава":"құрдым"}</span><span><i style="background-image:${bio.goal==="portal"?"conic-gradient(#7b3fe4,#b47bff,#4a2196,#7b3fe4)":`url(${SPR[bio.goal]})`}"></i>${bio.goalName}</span></div><div class="board" id="board"></div></div>`;
+  drawBoard();
+  const pal=L.pal||[PAL_E,PAL_M,PAL_H][L.b];
+  const saved=(()=>{try{return localStorage.getItem("blok-code-"+i)}catch(e){return null}})();
+  $("#lvPanel").innerHTML=`<div class="qcard"><p class="story">${L.story}</p>
+   <div class="palette" id="pal">${pal.map(p=>`<button type="button" data-ins="${esc(p)}">${esc(p.replace(/\n\s*$/,"").replace(/\n/g," "))}</button>`).join("")}</div>
+   <div class="editor"><div class="gutter" id="gut"></div><textarea id="ed" spellcheck="false" aria-label="Python коды" autocapitalize="off" autocomplete="off">${esc(saved||"")}</textarea></div>
+   <div class="run-row"><button class="pbtn" type="button" id="runB">▶ Іске қос</button><button class="pbtn stone sm" type="button" id="clrB">Тазалау</button><button class="pbtn blue sm" type="button" id="hintB">🤖 Кеңес</button><span class="lines-info" id="linesInfo"></span></div>
+   <div class="console" id="con" aria-live="polite">Бит-Бот: Командаларды жаз да, «▶ Іске қос» бас. 3 жұлдыз үшін ${L.limit} жолдан аспа.</div>
+   <div class="fb ok ref" id="refBox"></div></div>`;
+  const ed=$("#ed");
+  const upd=()=>{const n=ed.value.split("\n").length;$("#gut").innerHTML=Array.from({length:Math.max(n,1)},(_,k)=>`<div data-g="${k+1}">${k+1}</div>`).join("");$("#gut").scrollTop=ed.scrollTop;const p=parse(ed.value);const c=p.count||0;$("#linesInfo").textContent=`${c} / ${L.limit} жол`;$("#linesInfo").style.color=c>L.limit?"#FF8A9A":"";try{localStorage.setItem("blok-code-"+i,ed.value)}catch(e){}};
+  ed.addEventListener("input",upd);ed.addEventListener("scroll",()=>$("#gut").scrollTop=ed.scrollTop);
+  ed.addEventListener("keydown",e=>{
+    if(e.key==="Tab"&&!e.shiftKey){e.preventDefault();insert("    ")}
+    if(e.key==="Enter"){e.preventDefault();const s=ed.selectionStart;const lineStart=ed.value.lastIndexOf("\n",s-1)+1;const cur=ed.value.slice(lineStart,s);let ind=cur.match(/^\s*/)[0];if(cur.trim().endsWith(":"))ind+="    ";insert("\n"+ind)}
+  });
+  function insert(t){const s=ed.selectionStart,e2=ed.selectionEnd;ed.value=ed.value.slice(0,s)+t+ed.value.slice(e2);ed.selectionStart=ed.selectionEnd=s+t.length;upd()}
+  $$("#pal [data-ins]").forEach(b=>b.onclick=()=>{ed.focus();let t=b.dataset.ins;const s=ed.selectionStart;const lineStart=ed.value.lastIndexOf("\n",s-1)+1;const cur=ed.value.slice(lineStart,s);const ind=cur.match(/^\s*/)[0];
+    if(t==="path_ahead()"){insert(t);return}
+    if(cur.trim()!==""){t="\n"+ind+t}if(!t.endsWith("    "))t+="\n"+ind;else t=t.replace(/\n    $/,"\n"+ind+"    ");insert(t);SFX.click()});
+  $("#clrB").onclick=()=>{ed.value="";upd();resetBoard();$("#con").textContent="Код тазаланды."};
+  let hintN=0;
+  $("#hintB").onclick=()=>{hintN++;const rb=$("#refBox");rb.classList.add("on");
+    if(hintN===1||PV.runs<3)rb.innerHTML=`<b>Бит-Бот кеңесі</b><span style="white-space:pre-wrap">${esc(L.hint)}</span>${PV.runs<3&&hintN>1?`<br><small>Толық шешімді көру үшін алдымен кемінде 3 рет іске қосып көр.</small>`:""}`;
+    else rb.innerHTML=`<b>Үлгі шешім</b><pre class="code" style="margin-top:6px">${hl(L.ref||L.build)}</pre><small>Шешімді көшірмей, түсініп барып өзің жаз.</small>`};
+  $("#runB").onclick=go2;
+  upd();
+}
+function cellSize(W){const box=$("#lvScene").clientWidth-40;return Math.max(26,Math.min(60,Math.floor(box/W.w)))}
+function drawBoard(){
+  const {W,bio}=PV;const S_=cellSize(W);const bd=$("#board");bd.style.setProperty("--S",S_+"px");bd.style.gridTemplateColumns=`repeat(${W.w},${S_}px)`;
+  let h="";for(let y=0;y<W.h;y++)for(let x=0;x<W.w;x++){const wx=x+W.minx,wy=y+W.miny,k=wx+","+wy;const isP=W.path.has(k);
+    h+=`<div class="cell ${isP?"floor":"haz"}" data-k="${k}" style="background-image:url(${TX[isP?bio.floor:bio.haz]})">${W.blocks.includes(k)?`<div class="blk" style="background-image:url(${TX[bio.block]})"></div>`:""}${wx===W.gx&&wy===W.gy?(bio.goal==="portal"?'<div class="portal"></div>':`<div class="goal"><img class="px" src="${SPR[bio.goal]}" alt="${bio.goalName}"></div>`):""}</div>`}
+  const hero=HEROES[S.hero]||HEROES.aibar;
+  h+=`<div class="hero-tok" id="tok"><img class="px" src="${SPR[hero.spr]}" alt="${hero.name}"><span class="dir" id="dirA"></span></div>`;
+  bd.innerHTML=h;PV.S=S_;placeTok(0,0,0,true);
+}
+function placeTok(x,y,d,instant){const t=$("#tok");if(!t)return;if(instant)t.style.transition="none";t.style.transform=`translate(${(x-PV.W.minx)*PV.S}px,${(y-PV.W.miny)*PV.S}px)`;if(d!==null)$("#dirA").style.transform=`rotate(${d*90}deg)`;if(instant){void t.offsetWidth;t.style.transition=""}}
+function resetBoard(){drawBoard()}
+function mark(ln,cls){$$("#gut div").forEach(d=>d.classList.remove("cur","err"));if(ln){const g=$(`#gut [data-g="${ln}"]`);if(g)g.classList.add(cls||"cur")}}
+async function go2(){
+  if(PV.busy)return;const ed=$("#ed"),con=$("#con");resetBoard();mark(0);
+  const p=parse(ed.value);
+  if(p.err){SFX.bad();con.innerHTML=`<span class="e">✖ ${p.err.ln}-жол: ${esc(p.err.msg)}</span>`;mark(p.err.ln,"err");return}
+  PV.runs++;PV.busy=true;PV.d=0;$("#runB").disabled=true;
+  const r=run(p.prog,PV.W,false);
+  con.innerHTML="Орындалуда…";const delay=REDUCE?60:Math.max(90,Math.min(260,4000/Math.max(1,r.ev.length)));
+  for(const e of r.ev){
+    mark(e.ln);
+    if(e.t==="move"){placeTok(e.x,e.y,null);SFX.step()}
+    if(e.t==="turn"){PV.d=e.d;$("#dirA").style.transform=`rotate(${e.d*90}deg)`}
+    if(e.t==="mine"){const blk=$(`[data-k="${e.k}"] .blk`);if(blk){blk.classList.add("break");burst(blk,["#7a7f89","#5a3818","#2a1840","#ffd23f"],$("#board"));setTimeout(()=>blk.remove(),330)}SFX.mine()}
+    if(e.t==="note")con.innerHTML=`<span class="w">⚠ ${e.ln}-жол: ${esc(e.msg)}</span>`;
+    if(e.t==="fall"){placeTok(e.x,e.y,null);await sleep(delay);$("#tok").classList.add("fall")}
+    if(e.t==="bump")$("#tok").classList.add("bump");
+    await sleep(delay);
+  }
+  PV.d=0;
+  PV.busy=false;$("#runB").disabled=false;
+  const atGoal=r.st.x===PV.W.gx&&r.st.y===PV.W.gy;
+  if(r.ok&&atGoal){
+    mark(0);SFX.win();const goalEl=$(`[data-k="${PV.W.gx},${PV.W.gy}"]`);if(goalEl)burst(goalEl,["#ffd23f","#5ef0ff","#ffffff","#b47bff"],$("#board"));
+    let stars=3;if(p.count>PV.L.limit)stars--;if(PV.runs>3)stars--;stars=Math.max(1,stars);
+    con.innerHTML=`🎉 Мақсатқа жеттің! Жол саны: ${p.count} (шегі ${PV.L.limit}). Іске қосу саны: ${PV.runs}.`;
+    await sleep(700);finishLevel(PV.i,stars);return;
+  }
+  SFX.bad();$("#lvScene").classList.add("shake");setTimeout(()=>$("#lvScene").classList.remove("shake"),400);
+  if(!r.ok){mark(r.err.ln,"err");const msg=r.err.msg==="haz"?`${PV.bio.hazName}! Жолдан шығып кеттің. Бағытты және қадам санын тексер.`:r.err.msg;con.innerHTML=`<span class="e">✖ ${r.err.ln}-жол: ${esc(msg)}</span>`}
+  else con.innerHTML=`<span class="w">Бағдарлама аяқталды, бірақ ${esc(PV.bio.goalTo)} әлі жеткен жоқсың. Тағы қандай команда керек?</span>`;
+}
+addEventListener("resize",()=>{if(screen==="level"&&PV&&!$("#board")?.closest("[hidden]")&&!PV.busy&&$("#board"))drawBoard()});
+
+/* ================= DAILY ================= */
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const dayNum=s=>Math.floor(new Date(s+"T12:00:00").getTime()/864e5);
+function pool(){const p=[[],[],[]];LEVELS.forEach(L=>{if(L.type==="battle")L.qs.forEach(q=>p[L.b].push(q))});EXTRA.forEach(q=>p[q.d].push(q));return p}
+function dailySet(seedStr,extra){const r=rng(dayNum(seedStr)*31+(extra||0));const P=pool();const take=(arr,n)=>{const a=arr.slice();const out=[];while(out.length<n&&a.length)out.push(a.splice(Math.floor(r()*a.length),1)[0]);return out};return take(P[0],2).concat(take(P[1],2),take(P[2],1))}
+function drawDaily(){
+  const t=today(),done=S.lastDaily===t;
+  if(S.lastDaily&&dayNum(t)-dayNum(S.lastDaily)>1&&S.streak){S.streak=0;save();hud()}
+  $("#dailyInfo").innerHTML=done?`Бүгінгі жаттығу орындалды! Серия: <b>${S.streak}</b> күн 🔥. Ертең жаңа тапсырмалар келеді. Қаласаң, қосымша жаттығу жаса.`:`Бүгін 5 тапсырма: 2 оңай, 2 орташа, 1 күрделі. Орындасаң: +5 кристалл, серияң ұзарады. Қазіргі серия: <b>${S.streak}</b> күн.`;
+  const days=Array.from({length:7},(_,k)=>{const d=new Date();d.setDate(d.getDate()-6+k);const s=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");return{s,on:S.days.includes(s),l:["Жс","Дс","Сс","Ср","Бс","Жм","Сн"][d.getDay()]}});
+  $("#streakRow").innerHTML=days.map(d=>`<i class="${d.on?"on":""}" title="${d.s}">${d.l}</i>`).join("");
+  $("#dailyStart").innerHTML=`<button class="pbtn ${done?"stone":"gold"}" type="button" id="dGo">${done?"↻ Қосымша жаттығу":"▶ Бүгінгі жаттығуды бастау"}</button>`;
+  $("#dGo").onclick=()=>startDaily(done);
+}
+function startDaily(extra){
+  screen="level";$$(".screen").forEach(s=>s.hidden=true);$("#scr-level").hidden=false;scrollTo({top:0});
+  const qs=dailySet(today(),extra?Date.now()%1000:0);const bi=Math.floor(Math.random()*3);
+  $("#lvCrumb").textContent="КҮНДЕЛІКТІ ЖАТТЫҒУ · "+today();$("#lvTitle").textContent=extra?"Қосымша жаттығу":"Бүгінгі 5 тапсырма";
+  $("#lvBack").onclick=()=>go("daily");
+  const sc=$("#lvScene");sc.className="scene";sc.innerHTML="";dressScene(sc,BIOMES[bi].id);
+  battle({qs,bio:BIOMES[bi],onLose:()=>startDaily(extra),onWin:st=>{
+    const t=today();let msg="";
+    if(!extra&&S.lastDaily!==t){S.streak=(S.lastDaily&&dayNum(t)-dayNum(S.lastDaily)===1)?S.streak+1:1;S.lastDaily=t;S.days=[...new Set(S.days.concat(t))].slice(-30);S.cry+=5;msg=`+5 кристалл · Серия: ${S.streak} күн 🔥`}else msg="Қосымша жаттығу — ми үшін пайдалы!";
+    save();addXP(20);SFX.win();
+    openModal(`<img class="px big" src="${SPR.bot}" alt=""><h2>Жаттығу аяқталды!</h2><div class="mstars">${[0,1,2].map(k=>`<span class="${k<st?"on":""}" style="animation-delay:${k*.2}s">★</span>`).join("")}</div><div class="rew"><span>+20 XP</span></div><p>${msg}</p><div class="mbtns"><button class="pbtn" type="button" data-close data-go="daily">Жарайды</button><button class="pbtn stone" type="button" data-close data-go="map">Карта</button></div>`)}});
+}
+
+hud();
+})();
+</script>
+<script>
+/* КОДҚОРЖЫН сайтына кірген оқушыны ойында да бақылау */
+(function(){
+const URL_="https://script.google.com/macros/s/AKfy.../exec";
+if(!/^https:\/\/script\.google/.test(URL_))return;
+const get=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}};
+const PTS={p1:10,p2:10,p3:10,p4:10,p5:20,p6:20,p7:20,p8:20,p9:30,p10:30,p11:30,p12:30};
+let mins=0;
+function send(ev){
+  const me=get("kk-me",null);if(!me)return;
+  const pr=get("kk-practice",{done:{}}),done=Object.keys(pr.done||{}).filter(k=>PTS[k]),lab=get("kk-lab",[]);
+  const st=get("blok-alemi",{stars:{}}),lv=Object.keys(st.stars||{}).length,sum=Object.values(st.stars||{}).reduce((a,b)=>a+b,0);
+  const body={name:me.name,cls:me.cls,device:me.id,minutes:Math.round((get("kk-active",0))/60)+mins,section:"Блок әлемі ойыны · "+lv+"/18 деңгей, "+sum+"★",mission:get("kk-mission",1)+"-миссия",practice:done.length+"/12 · зертхана "+lab.length+"/8",score:done.reduce((a,k)=>a+PTS[k],0)};
+  if(ev)body.event=ev;
+  try{fetch(URL_,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body),keepalive:true}).catch(()=>{})}catch(e){}
+}
+send("Ойынды ашты");
+setInterval(()=>{if(!document.hidden){mins++;send()}},60000);
+document.addEventListener("visibilitychange",()=>{if(document.hidden)send()});
+})();
+</script>
+</body>
+</html>

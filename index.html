@@ -600,7 +600,7 @@ footer b{color:var(--ink)}
   <div class="wrap">
     <a class="brand" href="#hero"><b>КОД</b><i>ҚОРЖЫН</i></a>
     <nav class="nav" aria-label="Бөлімдер">
-      <a href="#hook">ҚЫЗЫҚТЫРУ</a><a href="#concept">КОНЦЕПЦИЯ</a><a href="#structure">ҚҰРЫЛЫМ</a><a href="#process">ПРОЦЕСС</a><a href="#link">БАЙЛАНЫС</a><a href="#apply">ҚОЛДАНУ</a><a href="#hard">ҚИЫНДЫҚТАР</a><a href="#ai">AI КӨМЕКШІ</a><a href="#practice">ПРАКТИКА</a><a href="#final">ҚОРЫТЫНДЫ</a>
+      <a href="missions.html">🪜 34 БАСПАЛДАҚ</a><a href="komek.html">🧑‍🏫 ҰСТАЗДАН КӨМЕК</a><a href="#hook">ҚЫЗЫҚТЫРУ</a><a href="#concept">КОНЦЕПЦИЯ</a><a href="#structure">ҚҰРЫЛЫМ</a><a href="#process">ПРОЦЕСС</a><a href="#link">БАЙЛАНЫС</a><a href="#apply">ҚОЛДАНУ</a><a href="#hard">ҚИЫНДЫҚТАР</a><a href="#ai">AI КӨМЕКШІ</a><a href="#practice">ПРАКТИКА</a><a href="oyin.html" target="_blank" rel="noopener">🎮 ОЙЫН</a><a href="#final">ҚОРЫТЫНДЫ</a>
     </nav>
     <button class="btn ghost sm" id="themeBtn" type="button" aria-label="Тақырып түсін ауыстыру"><span class="emo" id="themeIco">🌙</span></button>
   </div>
@@ -628,6 +628,7 @@ footer b{color:var(--ink)}
       <div class="cta">
         <a class="btn primary" href="#hook"><span class="emo">🚀</span> Миссияны бастау</a>
         <a class="btn ghost" href="#process"><span class="emo">🐍</span> Python зертханасы</a>
+        <a class="btn blue" href="oyin.html" target="_blank" rel="noopener"><span class="emo">🎮</span> «Блок әлемі» ойыны</a>
       </div>
     </div>
     <figure class="photo-card" style="margin:0">
@@ -1285,7 +1286,7 @@ function showMission(n,focus){
    <ul>${m[1].map(t=>`<li>${t}</li>`).join("")}</ul>
    ${m[4]?`<pre class="mini" style="margin-top:12px">${syntaxLite(m[4])}</pre>`:""}
    <div class="m-res"><b>Нәтиже:</b> ${m[2]}</div>
-   <div class="m-nav"><button class="btn ghost sm" type="button" id="mPrev" ${curM===1?"disabled":""}>← Алдыңғы</button><button class="btn blue sm" type="button" id="mNext" ${curM===34?"disabled":""}>Келесі миссия →</button></div></div>`;
+   <div class="m-nav"><button class="btn ghost sm" type="button" id="mPrev" ${curM===1?"disabled":""}>← Алдыңғы</button><a class="btn primary sm" href="missions.html#m${curM}">▶ Миссияны ашу: видео + тапсырма</a><button class="btn blue sm" type="button" id="mNext" ${curM===34?"disabled":""}>Келесі миссия →</button></div></div>`;
   $("#mPrev").onclick=()=>showMission(curM-1,true);$("#mNext").onclick=()=>showMission(curM+1,true);
   if(focus){const b=$(`.step-btn[data-n="${curM}"]`);b.scrollIntoView({block:"nearest",inline:"center",behavior:reduce?"auto":"smooth"})}
 }
@@ -1753,7 +1754,8 @@ const PTS={p1:10,p2:10,p3:10,p4:10,p5:20,p6:20,p7:20,p8:20,p9:30,p10:30,p11:30,p
 function snapshot(){
   const pr=LS.get("kk-practice",{done:{}}),done=Object.keys(pr.done||{}).filter(k=>PTS[k]);
   const lab=LS.get("kk-lab",[]);
-  return{section:SEC[curSection()],mission:LS.get("kk-mission",1)+"-миссия",practice:done.length+"/12 · зертхана "+lab.length+"/8",score:done.reduce((a,k)=>a+PTS[k],0)};
+  const ms=Object.keys((LS.get("kk-ms",{})||{}).done||{}),mp=[10,20,30];
+  return{section:SEC[curSection()],mission:LS.get("kk-mission",1)+"-миссия",practice:"миссия "+ms.length+"/102 · практика "+done.length+"/12",score:done.reduce((a,k)=>a+PTS[k],0)+ms.reduce((a,k)=>a+(mp[+k.split("-")[1]]||0),0),prog:ms.concat(done)};
 }
 let activeSec=LS.get("kk-active",0),lastSig="",sendT=null;
 function send(event){
