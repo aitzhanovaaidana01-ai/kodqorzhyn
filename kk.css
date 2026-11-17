@@ -339,6 +339,7 @@ footer b{color:var(--ink)}
   .m-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .lv-tab span{font-size:11.5px}
   .who-chip small{display:none}
+  .t-lbl{display:none}
   .st-box b{white-space:normal;font-size:14.5px}
   .sec-h{grid-template-columns:minmax(0,1fr)}.sec-h p{grid-column:1}
   .brand{font-size:15px}

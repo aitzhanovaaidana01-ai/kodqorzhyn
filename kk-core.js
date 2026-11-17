@@ -96,10 +96,16 @@ window.KK = (function () {
   }
   function drawWho() {
     const w = $("#who"); if (!w) return;
-    if (me) w.innerHTML = `<span class="who-chip" title="${esc(me.name)} · ${esc(me.cls)}">👤 ${esc(me.name.split(" ")[0])} <small id="brkLeft"></small></span><button class="btn ghost sm" type="button" id="logoutB">Шығу</button>`;
-    else w.innerHTML = `<button class="btn primary sm" type="button" id="loginB">Кіру</button>`;
-    const lo = $("#logoutB"); if (lo) lo.onclick = () => { beacon("Шықты"); me = null; LS.set("kk-me", null); board = null; drawWho(); page.onChange(); openLogin() };
-    const li = $("#loginB"); if (li) li.onclick = openLogin;
+    /* мұғалім панелі басты бетте: index.html#teacher оны бірден ашады */
+    const T = `<a class="btn ghost sm" href="index.html#teacher" title="Мұғалімге арналған кіру">👩‍🏫<span class="t-lbl"> Мұғалім</span></a>`;
+    if (me) w.innerHTML = `<span class="who-chip" title="${esc(me.name)} · ${esc(me.cls)}">👤 ${esc(me.name.split(" ")[0])} <small id="brkLeft"></small></span><button class="btn ghost sm" type="button" id="logoutB">Шығу</button>` + T;
+    else w.innerHTML = `<button class="btn primary sm" type="button" id="loginB">Кіру</button>` + T;
+    const lo = $("#logoutB"); if (lo) lo.onclick = () => {
+      beacon("Шықты"); me = null; LS.set("kk-me", null); board = null;
+      const pr = LS.get("kk-practice", null); if (pr) { pr.name = ""; pr.cls = ""; LS.set("kk-practice", pr) }
+      drawWho(); page.onChange(); openLogin(true);
+    };
+    const li = $("#loginB"); if (li) li.onclick = () => openLogin();
   }
 
   /* ---------- login (басты беттегі ережелермен бірдей) ---------- */
@@ -174,7 +180,11 @@ window.KK = (function () {
     };
     $("#brkDone").onclick = () => { $("#brkOv").hidden = true; sinceBreak = 0; LS.set("kk-since", 0) };
   }
-  function openLogin() { ensureOverlays(); $("#loginOv").hidden = false; $("#lgStep1").hidden = false; $("#lgStep2").hidden = true; setTimeout(() => $("#lgName").focus(), 50) }
+  function openLogin(after) {
+    ensureOverlays(); $("#loginOv").hidden = false; $("#lgStep1").hidden = false; $("#lgStep2").hidden = true;
+    if (after === true) { const n = $("#lgName"), m = $("#lgMsg"); n.value = ""; n.classList.remove("bad"); m.className = "msg ok"; m.textContent = "✓ Сіз сайттан шықтыңыз. Енді басқа оқушы өз атымен кіре алады." }
+    setTimeout(() => $("#lgName").focus(), 50);
+  }
 
   /* ---------- break reminder: әр 15 минут белсенді уақыттан кейін ---------- */
   const BREAK_EVERY = 15 * 60;

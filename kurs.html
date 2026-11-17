@@ -414,7 +414,7 @@ section.sec:nth-of-type(even) .card{background:var(--bg)}
 .brk-timer .tr{flex:1;height:10px;border-radius:10px;background:var(--surface-2);overflow:hidden}
 .brk-timer .tr i{display:block;height:100%;background:var(--grad-rb);width:0}
 .brk-timer b{font:900 20px/1 var(--f-mono);min-width:48px;text-align:right}
-@media (max-width:640px){.who-chip{max-width:130px}.who .btn{padding:8px 10px}.ov-box{padding:22px 18px}}
+@media (max-width:640px){.t-lbl{display:none}.who-chip{max-width:130px}.who .btn{padding:8px 10px}.ov-box{padding:22px 18px}}
 /* ===== practice / compiler ===== */
 .pr{display:grid;grid-template-columns:280px minmax(0,1fr);gap:20px;align-items:start}
 .pr-list{display:flex;flex-direction:column;gap:6px;position:sticky;top:84px;max-height:calc(100vh - 100px);overflow:auto;padding-right:4px}
@@ -1729,9 +1729,10 @@ const tb=$("#themeBtn");
 tb.insertAdjacentHTML("beforebegin",`<div class="who" id="who"></div>`);
 function drawWho(){
   const w=$("#who");
-  if(me)w.innerHTML=`<span class="who-chip" title="${esc(me.name)} · ${esc(me.cls)}">👤 ${esc(me.name.split(" ")[0])} <small id="brkLeft"></small></span><button class="btn ghost sm" type="button" id="logoutB" aria-label="Шығу">Шығу</button>`;
-  else w.innerHTML=`<button class="btn primary sm" type="button" id="loginB">Кіру</button>`;
-  const lo=$("#logoutB");if(lo)lo.onclick=()=>{send("Шықты");me=null;LS.set("kk-me",null);drawWho();openLogin()};
+  const T=`<button class="btn ghost sm" type="button" data-teacher title="Мұғалімге арналған кіру">👩‍🏫<span class="t-lbl"> Мұғалім</span></button>`;
+  if(me)w.innerHTML=`<span class="who-chip" title="${esc(me.name)} · ${esc(me.cls)}">👤 ${esc(me.name.split(" ")[0])} <small id="brkLeft"></small></span><button class="btn ghost sm" type="button" id="logoutB" aria-label="Шығу">Шығу</button>`+T;
+  else w.innerHTML=`<button class="btn primary sm" type="button" id="loginB">Кіру</button>`+T;
+  const lo=$("#logoutB");if(lo)lo.onclick=logout;
   const li=$("#loginB");if(li)li.onclick=openLogin;
 }
 
@@ -1753,7 +1754,18 @@ function checkName(raw){
   return{ok:v};
 }
 let pending=null;
-function openLogin(){$("#loginOv").hidden=false;$("#lgStep1").hidden=false;$("#lgStep2").hidden=true;setTimeout(()=>$("#lgName").focus(),50)}
+/* Шығу: аты-жөн тазаланады, келесі оқушы өз атымен кіреді */
+function logout(){
+  send("Шықты");me=null;LS.set("kk-me",null);
+  const pn=$("#prName"),pc=$("#prClass");
+  if(pn){pn.value="";pn.dispatchEvent(new Event("input"))}if(pc){pc.value="";pc.dispatchEvent(new Event("input"))}
+  drawWho();openLogin(true);
+}
+function openLogin(after){
+  $("#loginOv").hidden=false;$("#lgStep1").hidden=false;$("#lgStep2").hidden=true;
+  if(after===true){const n=$("#lgName"),m=$("#lgMsg");n.value="";n.classList.remove("bad");m.className="msg ok";m.textContent="✓ Сіз сайттан шықтыңыз. Енді басқа оқушы өз атымен кіре алады."}
+  setTimeout(()=>$("#lgName").focus(),50);
+}
 $("#lgName").addEventListener("input",()=>{$("#lgName").classList.remove("bad");$("#lgMsg").textContent="";$("#lgMsg").className="msg"});
 $("#lgForm").addEventListener("submit",e=>{
   e.preventDefault();const r=checkName($("#lgName").value),m=$("#lgMsg");
@@ -1867,7 +1879,8 @@ function draw(){
 
 /* ---------- start ---------- */
 drawWho();
-if(!me)openLogin();else send("Қайта ашты");
+/* басқа беттердегі «Мұғалім» батырмасы осында (#teacher) әкеледі */
+if(location.hash==="#teacher"){openTeacher()}else if(!me)openLogin();else send("Қайта ашты");
 })();
 </script>
 <script>
