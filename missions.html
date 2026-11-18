@@ -35,7 +35,7 @@
   </div>
 </footer>
 
-<script src="kk-core.js?v=5"></script>
+<script src="kk-core.js?v=6"></script>
 <script src="missions-data.js?v=3"></script>
 <script>
 (function () {
@@ -181,7 +181,8 @@ function drawMission() {
       <div class="m-big">${pad(n)}<small>МИССИЯ</small></div>
       <div><h1><span class="emo">${m.e}</span> ${esc(m.t)}</h1>
         <ul>${m.goals.map(g => `<li>${esc(g)}</li>`).join("")}</ul>
-        <div class="m-res"><b>Нәтиже:</b> ${esc(m.res)}</div></div>
+        <div class="m-res"><b>Нәтиже:</b> ${esc(m.res)}</div>
+        <a class="btn ghost sm" style="margin-top:12px" href="sozdik.html?m=${n}" target="_blank" rel="noopener">📖 Осы миссияның сөздігі</a></div>
     </div>
 
     <section class="block" aria-labelledby="b1"><div class="block-h"><span class="n">1</span><h2 id="b1">Түсіндірме видео</h2><span class="sub">қысқаша, 1–3 минут</span></div>
@@ -191,7 +192,7 @@ function drawMission() {
       <div class="card theory"><p>${esc(m.th)}</p><div class="rule">${esc(m.rule)}</div>
       ${ideHTML("demo", { file: "mysal_" + pad(n) + ".py", cls: "runner", inputs: !!m.demoIn, btns: '<button class="btn ghost sm" type="button" id="demoReset">↺ Бастапқы</button><button class="btn blue sm" type="button" id="demoRun">▶ Іске қос</button>' })}</div></section>
 
-    <section class="block" aria-labelledby="b3"><div class="block-h"><span class="n">3</span><h2 id="b3">Практикалық тапсырмалар</h2><span class="sub">5 тапсырма: оңайдан күрделіге</span></div>
+    <section class="block" aria-labelledby="b3"><div class="block-h"><span class="n">3</span><h2 id="b3">Практикалық тапсырмалар</h2><span class="sub">5 тапсырма: оңайдан күрделіге · <a href="sozdik.html?m=${n}" target="_blank" rel="noopener">📖 сөздік</a></span></div>
       <div class="lv-tabs" id="lvTabs" role="tablist" aria-label="Тапсырмалар"></div>
       <div class="card" id="taskBox"></div></section>
 
